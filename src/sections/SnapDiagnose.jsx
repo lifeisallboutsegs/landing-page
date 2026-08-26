@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import SectionIntro from '@/sections/SectionIntro';
 import RippleGrid from '@/components/RippleGrid';
@@ -33,15 +33,123 @@ const CHECKS = [
   'Form length and the friction before an enquiry',
 ];
 
+/**
+ * Animated score dial. The number alone read as arbitrary; a ring that fills to
+ * the score, coloured by band and captioned with a verdict, tells the visitor
+ * what it means without them having to work it out.
+ */
+function ScoreRing({ score }) {
+  const R = 52;
+  const C = 2 * Math.PI * R;
+  const tone =
+    score >= 80 ? '#059669' : score >= 55 ? '#d97706' : '#dc2626';
+  const verdict =
+    score >= 80 ? 'Good shape' : score >= 55 ? 'Needs work' : 'Losing traffic';
+
+  return (
+    <div className="flex items-center gap-5">
+      <div className="relative h-[128px] w-[128px] shrink-0">
+        <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
+          <circle cx="64" cy="64" r={R} fill="none" stroke="currentColor" strokeWidth="10" className="text-line" />
+          <motion.circle
+            cx="64" cy="64" r={R} fill="none" stroke={tone} strokeWidth="10" strokeLinecap="round"
+            strokeDasharray={C}
+            initial={{ strokeDashoffset: C }}
+            animate={{ strokeDashoffset: C - (C * score) / 100 }}
+            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <motion.span
+            className="text-[2.4rem] font-semibold leading-none tracking-[-0.04em]"
+            style={{ color: tone }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25, type: 'spring', stiffness: 200, damping: 16 }}
+          >
+            {score}
+          </motion.span>
+          <span className="mt-0.5 text-[0.7rem] uppercase tracking-[0.14em] text-ink-faint">/ 100</span>
+        </div>
+      </div>
+      <div>
+        <span className="block text-[1.05rem] font-semibold tracking-[-0.02em]" style={{ color: tone }}>
+          {verdict}
+        </span>
+        <span className="mt-1 block max-w-[13rem] text-[0.85rem] leading-relaxed text-ink-soft">
+          On-page technical and commercial checks.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Crawling takes a few seconds of dead air. Stepping through the real check
+ * list makes the wait legible and shows what is being looked at, instead of a
+ * spinner that could mean anything.
+ */
+function AuditProgress() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setStep((n) => Math.min(n + 1, CHECKS.length - 1)), 420);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-20 rounded-2xl border border-line bg-paper/85 p-8 backdrop-blur-xl md:p-12"
+    >
+      <div className="mb-8 flex items-center gap-4 border-b border-line pb-8">
+        <span className="relative flex h-3 w-3 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cobalt opacity-70" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-cobalt" />
+        </span>
+        <span className="text-[1.05rem] font-semibold tracking-[-0.02em]">Crawling the page…</span>
+      </div>
+
+      <ul className="flex flex-col gap-3">
+        {CHECKS.map((check, i) => {
+          const done = i < step;
+          const active = i === step;
+          return (
+            <li key={check} className="flex items-center gap-4 text-[0.9rem]">
+              <span
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
+                  done
+                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                    : active
+                      ? 'border-cobalt'
+                      : 'border-line'
+                }`}
+              >
+                {done && (
+                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                {active && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cobalt" />}
+              </span>
+              <span className={done || active ? 'text-ink' : 'text-ink-faint'}>{check}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </motion.div>
+  );
+}
+
 const SEVERITY_TONE = {
   critical: 'bg-red-100 text-red-700',
   high: 'bg-orange-100 text-orange-700',
   medium: 'bg-amber-100 text-amber-800',
   low: 'bg-zinc-100 text-zinc-600',
 };
-
-const scoreTone = (score) =>
-  score >= 80 ? 'text-emerald-600' : score >= 55 ? 'text-amber-600' : 'text-red-600';
 
 function Fact({ label, value, bad }) {
   return (
@@ -224,6 +332,10 @@ export default function SnapDiagnose() {
           </div>
 
           {/* Live audit report */}
+          <AnimatePresence mode="wait">
+            {status === 'running' && <AuditProgress key="progress" />}
+          </AnimatePresence>
+
           <AnimatePresence>
             {report && (
               <motion.div
@@ -244,12 +356,7 @@ export default function SnapDiagnose() {
                     </h4>
                   </div>
 
-                  <div className="flex items-baseline gap-3">
-                    <span className={`text-[3.4rem] font-semibold leading-none tracking-[-0.04em] ${scoreTone(report.score)}`}>
-                      {report.score}
-                    </span>
-                    <span className="text-[0.9rem] text-ink-faint">/ 100</span>
-                  </div>
+                  <ScoreRing score={report.score} />
                 </div>
 
                 <div className="mb-10 grid grid-cols-2 gap-x-8 gap-y-5 text-[0.85rem] md:grid-cols-4">
