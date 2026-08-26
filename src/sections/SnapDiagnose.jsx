@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import SectionIntro from '@/sections/SectionIntro';
 import RippleGrid from '@/components/RippleGrid';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
@@ -32,14 +33,70 @@ const CHECKS = [
   'Form length and the friction before an enquiry',
 ];
 
+const SEVERITY_TONE = {
+  critical: 'bg-red-100 text-red-700',
+  high: 'bg-orange-100 text-orange-700',
+  medium: 'bg-amber-100 text-amber-800',
+  low: 'bg-zinc-100 text-zinc-600',
+};
+
+const scoreTone = (score) =>
+  score >= 80 ? 'text-emerald-600' : score >= 55 ? 'text-amber-600' : 'text-red-600';
+
+function Fact({ label, value, bad }) {
+  return (
+    <div>
+      <span className="mb-1 block text-[0.72rem] uppercase tracking-[0.12em] text-ink-faint">
+        {label}
+      </span>
+      <span className={`block font-medium ${bad ? 'text-red-600' : 'text-ink'}`}>{value}</span>
+    </div>
+  );
+}
+
 export default function SnapDiagnose() {
   const motionRef = useSnapTransition();
-  const [submitted, setSubmitted] = useState(false);
   const [bgRef, bgLive] = useInView();
 
-  const handleSubmit = (event) => {
+  const [url, setUrl] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState(null);
+  const resultsRef = useRef(null);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
+    if (!url.trim()) return;
+
+    setStatus('running');
+    setError(null);
+    setReport(null);
+
+    try {
+      const response = await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setStatus('error');
+        setError(data.error ?? 'That page could not be audited.');
+        return;
+      }
+
+      setReport(data.result);
+      setStatus('done');
+      // The report renders below the fold of this section, so take the reader
+      // to it rather than leaving them looking at an unchanged input.
+      requestAnimationFrame(() =>
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      );
+    } catch {
+      setStatus('error');
+      setError('Could not reach the audit service. Please try again.');
+    }
   };
 
   return (
@@ -113,14 +170,22 @@ export default function SnapDiagnose() {
 
                 <PlaceholdersAndVanishInput
                   placeholders={PLACEHOLDERS}
-                  onChange={() => setSubmitted(false)}
+                  onChange={(event) => setUrl(event.target.value)}
                   onSubmit={handleSubmit}
                 />
 
-                <p className="mt-6 max-w-md text-[0.9rem] leading-relaxed text-ink-soft">
-                  {submitted
-                    ? "Queued. The crawl takes a few minutes — we'll email the report when it's ready, with no obligation attached to it."
-                    : 'No account, no sales call attached. The report lands in your inbox and it is yours to take to anyone.'}
+                <p
+                  className={`mt-6 max-w-md text-[0.9rem] leading-relaxed ${
+                    status === 'error' ? 'text-red-600' : 'text-ink-soft'
+                  }`}
+                  role={status === 'error' ? 'alert' : undefined}
+                  aria-live="polite"
+                >
+                  {status === 'running' && 'Crawling the page now — this takes a few seconds.'}
+                  {status === 'error' && error}
+                  {status === 'done' && 'Done. Your report is below — no email required.'}
+                  {status === 'idle' &&
+                    'No account, no sales call attached. The report is yours to take to anyone.'}
                 </p>
 
                 <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-line pt-6 text-[0.8rem] font-medium tracking-tight text-ink-soft">
@@ -157,6 +222,81 @@ export default function SnapDiagnose() {
               </div>
             </AnimatedContent>
           </div>
+
+          {/* Live audit report */}
+          <AnimatePresence>
+            {report && (
+              <motion.div
+                ref={resultsRef}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-20 scroll-mt-24 rounded-2xl border border-line bg-paper/85 p-8 backdrop-blur-xl md:p-12"
+              >
+                <div className="mb-10 flex flex-wrap items-end justify-between gap-6 border-b border-line pb-8">
+                  <div>
+                    <span className="mb-2 block text-[0.8rem] font-semibold tracking-tight text-cobalt">
+                      Audit complete
+                    </span>
+                    <h4 className="max-w-xl break-all text-[1.15rem] font-semibold tracking-[-0.02em]">
+                      {report.url}
+                    </h4>
+                  </div>
+
+                  <div className="flex items-baseline gap-3">
+                    <span className={`text-[3.4rem] font-semibold leading-none tracking-[-0.04em] ${scoreTone(report.score)}`}>
+                      {report.score}
+                    </span>
+                    <span className="text-[0.9rem] text-ink-faint">/ 100</span>
+                  </div>
+                </div>
+
+                <div className="mb-10 grid grid-cols-2 gap-x-8 gap-y-5 text-[0.85rem] md:grid-cols-4">
+                  <Fact label="Title" value={report.summary.titleLength ? `${report.summary.titleLength} chars` : 'missing'} bad={!report.summary.titleLength} />
+                  <Fact label="Indexable" value={report.summary.indexable ? 'yes' : 'blocked'} bad={!report.summary.indexable} />
+                  <Fact label="Structured data" value={report.summary.schemaTypes.length ? report.summary.schemaTypes.slice(0, 2).join(', ') : 'none'} bad={!report.summary.schemaTypes.length} />
+                  <Fact label="States an offer" value={report.summary.statesAnOffer ? 'yes' : 'no'} bad={!report.summary.statesAnOffer} />
+                  <Fact label="Redirects" value={String(report.summary.redirects)} bad={report.summary.redirects > 1} />
+                  <Fact label="Images without alt" value={`${report.summary.imagesMissingAlt} of ${report.summary.images}`} bad={report.summary.imagesMissingAlt > 0} />
+                  <Fact label="Render-blocking" value={String(report.summary.renderBlockingScripts)} bad={report.summary.renderBlockingScripts > 0} />
+                  <Fact label="Longest form" value={report.summary.forms ? `${report.summary.longestFormFields} fields` : 'no form'} bad={report.summary.longestFormFields > 6 || !report.summary.forms} />
+                </div>
+
+                {report.findings.length === 0 ? (
+                  <p className="text-[0.95rem] text-ink-soft">
+                    Nothing flagged on the on-page checks. That is rare.
+                  </p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-line border-y border-line">
+                    {report.findings.map((f) => (
+                      <li key={f.id} className="flex flex-col gap-2 py-5 md:flex-row md:gap-8">
+                        <span className={`h-fit w-fit shrink-0 rounded-full px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.1em] ${SEVERITY_TONE[f.severity]}`}>
+                          {f.severity}
+                        </span>
+                        <span className="block">
+                          <span className="mb-1.5 block text-[1rem] font-semibold tracking-[-0.02em]">
+                            {f.title}
+                          </span>
+                          <span className="mb-2 block max-w-2xl break-words text-[0.9rem] leading-relaxed text-ink-soft">
+                            {f.detail}
+                          </span>
+                          <span className="block max-w-2xl text-[0.9rem] leading-relaxed text-ink">
+                            <strong className="font-semibold">Fix:</strong> {f.fix}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <p className="mt-8 text-[0.85rem] text-ink-faint">
+                  These are the on-page checks. Core Web Vitals and field performance data are
+                  added once the PageSpeed key is configured.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="mx-auto mt-28 max-w-3xl border-t border-line pt-14 text-center">
             <ScrollReveal
