@@ -98,9 +98,40 @@ export const adminUsers = pgTable('admin_users', {
   name: varchar('name', { length: 200 }),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   role: varchar('role', { length: 30 }).notNull().default('admin'),
+
+  // Lockout state. Counting failures on the account as well as the IP means a
+  // distributed attempt cannot dodge the limit by rotating source addresses.
+  failedAttempts: integer('failed_attempts').notNull().default(0),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
+
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Server-side admin sessions.
+ *
+ * Opaque random tokens rather than JWTs, deliberately: a JWT stays valid until
+ * it expires, so logging out or discovering a stolen token cannot actually
+ * revoke access. A row can be deleted. Only the SHA-256 of the token is stored,
+ * so a database leak does not hand over usable session cookies.
+ */
+export const adminSessions = pgTable(
+  'admin_sessions',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    ipHash: varchar('ip_hash', { length: 64 }),
+    userAgent: varchar('user_agent', { length: 500 }),
+  },
+  (t) => [index('admin_sessions_token_hash_idx').on(t.tokenHash)],
+);
 
 /**
  * Sliding-window counter for public endpoints. The audit tool and lead form are
