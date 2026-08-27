@@ -108,12 +108,16 @@ authenticated, and it logs a warning on every boot so it cannot be forgotten.
 ```bash
 cd /var/www/dwa-site
 sudo -u dwa --preserve-env env $(sudo cat /etc/dwa-site.env | xargs) npm run db:migrate
-sudo -u dwa npm run build
-
-# `output: 'standalone'` does not copy these two.
-sudo -u dwa cp -r public .next/standalone/public
-sudo -u dwa cp -r .next/static .next/standalone/.next/static
+sudo -u dwa npm run build:standalone   # build + copies public/ and .next/static
 ```
+
+**Why the environment must be injected.** The standalone server resolves `.env`
+files relative to its own directory (`.next/standalone`), not the project root,
+so a `.env.local` at the top level is silently ignored and every database call
+fails with *"DATABASE_URL is not set"*. The systemd `EnvironmentFile` in step 7
+is what makes this work in production. To run the same build locally, use
+`npm run start:prod`, which loads the project's env files and hands them to the
+server process.
 
 ## 6. Create the admin user
 
