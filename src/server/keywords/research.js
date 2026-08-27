@@ -72,8 +72,14 @@ export async function research(seed, options = {}) {
 
   const raw = await provider.expand(seed, options);
 
+  const place = (options.location ?? '').trim().toLowerCase();
+
   const rows = raw
     .filter((row) => row.keyword !== seed.trim().toLowerCase())
+    // When a location is asked for, drop suggestions anchored to a different
+    // place. Autocomplete happily returns "roof repair in karol bagh" for a
+    // London query, and shipping that to a client would be embarrassing.
+    .filter((row) => !place || !/\b(in|near)\s+\w/.test(row.keyword) || row.keyword.includes(place))
     .map((row) => {
       const { intent, intentWeight } = classifyIntent(row.keyword);
       const difficulty = estimateDifficulty(row.keyword, row.prominence);

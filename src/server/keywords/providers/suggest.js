@@ -9,6 +9,13 @@
  * engine's own popularity ordering. What they do NOT give us is search volume.
  * Anything claiming to derive absolute monthly volume from autocomplete is
  * guessing, so this provider reports `volume: null` and the UI must say so.
+ *
+ * They also do not honour region parameters. Measured directly: Google returns
+ * byte-identical results for gl=gb and gl=us, and DuckDuckGo's kl= barely moves
+ * them — both skew to wherever the caller's IP sits and to US cities. So there
+ * is no `country` option here, because it would do nothing. Geography is
+ * targeted the only way that actually works on these endpoints: by putting the
+ * place into the query, via `location`.
  */
 
 const TIMEOUT_MS = 8000;
@@ -46,10 +53,11 @@ async function fetchJson(url) {
 }
 
 /** Google's autocomplete endpoint. Returns [query, [suggestions], ...]. */
-async function google(seed, { language, country }) {
+async function google(seed, { language }) {
+  // hl (language) is honoured; gl (country) is not, so it is not sent.
   const url =
     'https://suggestqueries.google.com/complete/search?client=firefox' +
-    `&hl=${encodeURIComponent(language)}&gl=${encodeURIComponent(country)}` +
+    `&hl=${encodeURIComponent(language)}` +
     `&q=${encodeURIComponent(seed)}`;
   const data = await fetchJson(url);
   return Array.isArray(data?.[1]) ? data[1] : [];
@@ -70,16 +78,26 @@ async function duckduckgo(seed) {
  * appended — the technique every keyword tool uses under the hood. Requests run
  * in small batches so we stay polite rather than firing 40 at once.
  */
-export async function expand(seed, { language = 'en', country = 'us', depth = 'standard' } = {}) {
+export async function expand(seed, { language = 'en', location = '', depth = 'standard' } = {}) {
   const term = seed.trim().toLowerCase();
   if (!term) return [];
 
-  const variants = [term];
+  const place = location.trim().toLowerCase();
+  // Putting the place in the query is what actually localises these endpoints.
+  const base = place ? `${term} ${place}` : term;
+
+  const variants = [base];
   if (depth !== 'shallow') {
-    variants.push(...MODIFIERS.map((m) => (m === 'vs' || m === 'for' ? `${term} ${m}` : `${m} ${term}`)));
+    variants.push(
+      ...MODIFIERS.map((m) => (m === 'vs' || m === 'for' ? `${base} ${m}` : `${m} ${base}`)),
+    );
+    if (place) {
+      // The bare term still surfaces "near me" phrasing worth keeping.
+      variants.push(`${term} near me`, `${term} in ${place}`, `${term} ${place} cost`);
+    }
   }
   if (depth === 'deep') {
-    variants.push(...ALPHABET.map((letter) => `${term} ${letter}`));
+    variants.push(...ALPHABET.map((letter) => `${base} ${letter}`));
   }
 
   // rank = position in the engine's own ordering; lower is more popular.
@@ -103,7 +121,7 @@ export async function expand(seed, { language = 'en', country = 'us', depth = 's
     await Promise.all(
       batch.map(async (variant) => {
         const [g, d] = await Promise.all([
-          google(variant, { language, country }),
+          google(variant, { language }),
           duckduckgo(variant),
         ]);
         g.forEach((phrase, index) => record(phrase, 'google', index));
