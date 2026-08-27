@@ -383,19 +383,29 @@ export function Globe3D({
   config = {},
   className,
   onMarkerClick,
-  onMarkerHover
+  onMarkerHover,
+  // react-three-fiber renders forever by default, so a mounted globe keeps a
+  // three.js scene, its lights and its auto-rotate running whether or not it is
+  // anywhere on screen. "never" parks it without tearing anything down, so it
+  // can resume in a frame.
+  frameloop = "always"
 }) {
   const mergedConfig = useMemo(() => ({ ...defaultConfig, ...config }), [config]);
 
   return (
     <div className={cn("relative h-[500px] w-full", className)}>
       <Canvas
+        frameloop={frameloop}
         gl={{
-          antialias: true,
+          // The globe sits behind copy at low opacity and is never the thing
+          // being read, so neither multisampling nor a retina backing store
+          // buys anything the reader can see — and both are paid for on every
+          // frame of a continuous auto-rotate.
+          antialias: false,
           alpha: true,
           powerPreference: "high-performance",
         }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         camera={{
           fov: 45,
           near: 0.1,

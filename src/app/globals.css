@@ -106,7 +106,17 @@
 .drift-b { animation: drift-b 34s ease-in-out infinite; will-change: transform; }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .drift-a, .drift-b { animation: none; }
+  .animate-\[scrollcue_2s_ease-in-out_infinite\] { animation: none; }
+  .hero-process-art, .attract-intent-art, .conversion-path-art { animation: none; }
+}
+
+/* Two 44rem layers drifting forever means the compositor never gets to rest,
+   which on a phone is a battery cost and a frame budget spent on something
+   nobody is looking at directly. The gradients stay; only the drift stops. */
+@media (pointer: coarse) {
+  .drift-a, .drift-b { animation: none; will-change: auto; }
 }
 
 @keyframes scrollcue {
@@ -114,9 +124,49 @@
   60%, 100% { transform: translateY(900%); }
 }
 
+/* A single tangible hero object receives only a slow compositor drift; the
+   motion supports the copy rather than competing with it. */
+.hero-process-art {
+  animation: hero-object-float 10s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  filter: drop-shadow(0 36px 46px rgba(27, 75, 224, 0.17));
+  will-change: transform;
+}
+
+@keyframes hero-object-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-0.75deg) scale(1); }
+  50% { transform: translate3d(-10px, -18px, 0) rotate(0.75deg) scale(1.018); }
+}
+
+/* The generated objects are accents rather than new visual layers to chase.
+   These tiny transforms stay on the compositor and are disabled for reduced
+   motion alongside the hero object above. */
+.attract-intent-art { animation: attract-object-drift 13s cubic-bezier(0.45, 0, 0.55, 1) infinite; will-change: transform; }
+.conversion-path-art { animation: conversion-object-drift 15s cubic-bezier(0.45, 0, 0.55, 1) infinite; will-change: transform; }
+
+@keyframes attract-object-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+  50% { transform: translate3d(-18px, -22px, 0) rotate(2deg); }
+}
+
+@keyframes conversion-object-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(2deg); }
+  50% { transform: translate3d(-10px, -24px, 0) rotate(-2deg); }
+}
+
+/* `clip` rather than `hidden`: hidden would make the root a scroll container
+   and every `position: sticky` pane on this page would stop sticking. This only
+   stops a decorative layer that overhangs the viewport — an oversized sky, a
+   globe cropped by its panel — from producing a horizontal scrollbar. */
+html {
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  scroll-padding-top: 1rem;
+}
+
 body {
   margin: 0;
   padding: 0;
+  overflow-x: clip;
   background-color: #ffffff;
   color: #0b0b12;
   font-family: 'Geist Variable', 'PP Neue Montreal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -128,6 +178,61 @@ body {
 
 body::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+/* Full-bleed scenes contain many transformed and negative-z decorative
+   layers. Give each scene its own stacking context so a canvas can never
+   paint over the following content, and make long dynamic strings wrap rather
+   than creating a horizontal page. */
+main > section {
+  isolation: isolate;
+  min-width: 0;
+  scroll-margin-top: 1rem;
+}
+
+main :where(h1, h2, h3, p, span, a, li) {
+  overflow-wrap: anywhere;
+}
+
+/* Keep the two conversion workbenches on a deliberate desktop grid. These are
+   explicit CSS rules rather than only generated utilities, so they remain
+   stable at high-DPI/zoomed browser sizes as well as in the utility build. */
+@media (min-width: 1024px) {
+  .audit-workbench {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .start-workbench {
+    grid-template-columns: minmax(0, 1fr) minmax(34rem, 38rem);
+  }
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid #1b4be0;
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  main > section {
+    scroll-margin-top: 0.75rem;
+  }
+
+  /* Backdrop filters repaint as their background moves. On touch devices the
+     same translucent surface is much smoother without the live sampling. */
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 /* Lenis smooth scroll */

@@ -10,23 +10,34 @@ import FadeContent from '@/components/FadeContent';
 import Magnet from '@/components/Magnet';
 import ShinyText from '@/components/ShinyText';
 import PillNav from '@/components/PillNav';
+import SectionCursor from '@/components/SectionCursor';
+import { QUALITY, dprCapFor, useQuality } from '@/hooks/use-quality';
 import { ArrowRight, ArrowDown } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const NAV_ITEMS = [
-  { label: 'Work', href: '#proof' },
-  { label: 'Services', href: '#build' },
-  { label: 'About', href: '#proof' },
-  { label: "Let's talk", href: '#start' },
+  { label: 'Work', href: '/work' },
+  { label: 'Services', href: '/services/landing-pages' },
+  { label: 'About', href: '/about' },
+  { label: "Let's talk", href: '/contact' },
 ];
 
 export default function Hero() {
   const root = useRef(null);
   const visual = useRef(null);
   const copy = useRef(null);
+  const process = useRef(null);
+  const tier = useQuality();
+  // The gradients underneath are the hero's actual composition; the two shaders
+  // are the top layer of it. Where they cannot be afforded the gradients simply
+  // stand alone, which is why nothing here needs a separate mobile artwork.
+  const shaders = tier >= QUALITY.LOW;
+  const dpr = dprCapFor(tier);
 
   useLayoutEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     const ctx = gsap.context(() => {
       // The hero doesn't fade out — it keeps travelling. The visual pushes
       // forward and the copy lifts away, so the next snap feels like the same
@@ -36,37 +47,52 @@ export default function Hero() {
           trigger: root.current,
           start: 'top top',
           end: 'bottom top',
-          scrub: 0.6,
+          // Lenis already smooths the scroll position this reads from. A long
+          // scrub on top of that is not extra polish, it is extra latency.
+          scrub: 0.25,
         },
       })
         .to(visual.current, { scale: 1.22, yPercent: -14, ease: 'none' }, 0)
-        .to(copy.current, { yPercent: -38, opacity: 0, ease: 'none' }, 0);
+        .to(copy.current, { yPercent: -38, opacity: 0, ease: 'none' }, 0)
+        .to(process.current, { yPercent: -18, rotate: 1.5, opacity: 0.32, ease: 'none' }, 0);
+
+      gsap.fromTo(
+        process.current,
+        { opacity: 0, y: 30, scale: 0.94 },
+        { opacity: 1, y: 0, scale: 1, duration: 1.1, ease: 'power3.out', delay: 0.35 },
+      );
     }, root);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <section ref={root} id="hero" data-snap="hero" className="relative h-[130vh] w-full">
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-paper">
+    <section ref={root} id="hero" data-snap="hero" className="relative h-[112svh] w-full sm:h-[125vh] lg:h-[130vh]">
+      {/* `svh` rather than `vh`: on a phone `100vh` is the viewport with the
+          address bar hidden, so a full-height hero sits a bar's worth taller
+          than the screen and the scroll cue starts life below the fold. */}
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-paper">
         {/* The flowing structure. Full-bleed, then veiled on the left so the
             type sits on paper rather than on top of the artwork. */}
         <div ref={visual} className="absolute inset-0 overflow-hidden will-change-transform">
           {/* Warm light at the destination, upper right. */}
-          <div className="absolute inset-0 opacity-70">
-            <LightRays
-              raysOrigin="right"
-              raysColor="#ff9e72"
-              raysSpeed={0.45}
-              lightSpread={1.6}
-              rayLength={2.6}
-              fadeDistance={1.4}
-              saturation={0.9}
-              followMouse
-              mouseInfluence={0.05}
-              noiseAmount={0.02}
-            />
-          </div>
+          {shaders && (
+            <div className="absolute inset-0 opacity-70">
+              <LightRays
+                raysOrigin="right"
+                raysColor="#ff9e72"
+                raysSpeed={0.45}
+                lightSpread={1.6}
+                rayLength={2.6}
+                fadeDistance={1.4}
+                saturation={0.9}
+                followMouse
+                mouseInfluence={0.05}
+                noiseAmount={0.02}
+                dprCap={dpr}
+              />
+            </div>
+          )}
 
           <div
             className="absolute inset-0"
@@ -79,6 +105,7 @@ export default function Hero() {
           {/* The single hero object. Prism renders bright-on-black, which is
               invisible on paper — the invert/hue-rotate pair flips it to
               dark-on-white and multiply drops the white it sits on. */}
+          {shaders && (
           <div
             className="absolute inset-y-0 right-0 w-[66%] opacity-95"
             style={{ filter: 'hue-rotate(42deg) saturate(1.45) contrast(1.08)' }}
@@ -98,6 +125,7 @@ export default function Hero() {
               suspendWhenOffscreen
             />
           </div>
+          )}
         </div>
 
         {/* Veils sit outside the parallax layer so they always clip the
@@ -129,7 +157,7 @@ export default function Hero() {
             neutralise PillNav's own absolute positioning so it can span the
             same grid as the rest of the page. */}
         <div className="absolute inset-x-0 top-0 z-30 pt-5">
-          <div className="mx-auto w-full max-w-[1600px] px-8 md:px-16 [&>div]:!static [&>div]:!top-auto [&>div]:!w-full [&_nav]:!w-full [&_nav]:!max-w-none [&_nav]:!justify-between">
+          <div className="mx-auto w-full max-w-[1600px] px-6 sm:px-8 md:px-16 [&>div]:!static [&>div]:!top-auto [&>div]:!w-full [&_nav]:!w-full [&_nav]:!max-w-none [&_nav]:!justify-between">
             <PillNav
               logo="/favicon.svg"
               logoAlt="Digital Web Assurances"
@@ -145,8 +173,8 @@ export default function Hero() {
         </div>
 
         {/* Copy */}
-        <div className="relative z-20 mx-auto flex h-full w-full max-w-[1600px] items-center px-8 md:px-16">
-          <div ref={copy} className="w-full max-w-[46%] min-w-[min(100%,34rem)] will-change-transform">
+        <div className="relative z-20 mx-auto flex h-full w-full max-w-[1600px] items-center px-6 sm:px-8 md:px-16">
+          <div ref={copy} className="w-full max-w-xl pt-12 will-change-transform sm:pt-16 md:min-w-[34rem] md:max-w-[46%] md:pt-0">
             <FadeContent blur duration={700} delay={120}>
               <span className="mb-7 block text-[0.8rem] font-medium tracking-tight text-ink-soft">
                 Digital Growth
@@ -171,7 +199,7 @@ export default function Hero() {
               stepDuration={0.19}
               animateBy="words"
               direction="top"
-              className="mb-11 max-w-xl text-[1.06rem] leading-relaxed text-ink-soft"
+              className="mb-8 max-w-xl text-[1rem] leading-relaxed text-ink-soft sm:mb-11 sm:text-[1.06rem]"
             />
 
             <AnimatedContent
@@ -203,12 +231,26 @@ export default function Hero() {
           </div>
         </div>
 
+        <div
+          ref={process}
+          aria-label="A flowing digital growth system: positioning, landing page, demand and qualified enquiries"
+          className="hero-process pointer-events-none absolute right-[4%] top-[43%] z-20 hidden w-[min(48vw,48rem)] -translate-y-1/2 lg:block"
+        >
+          <div className="relative">
+            <img
+              src="/assets/hero-growth-ribbon.png"
+              alt="A cobalt ribbon passing through stages of a digital growth system"
+              className="hero-process-art block w-full object-contain"
+            />
+          </div>
+        </div>
+
         {/* Scroll cue */}
         <FadeContent
           blur={false}
           duration={700}
           delay={1500}
-          className="absolute inset-x-0 bottom-9 z-20 px-8 md:px-16"
+          className="absolute inset-x-0 bottom-7 z-20 px-6 sm:bottom-9 sm:px-8 md:px-16"
         >
           <div className="mx-auto flex w-full max-w-[1600px] items-end justify-between">
             <div className="flex items-center gap-4">
@@ -225,6 +267,7 @@ export default function Hero() {
           </div>
         </FadeContent>
       </div>
+      <SectionCursor sectionId="hero" variant="crosshair" color="rgba(27,75,224,0.28)" />
     </section>
   );
 }

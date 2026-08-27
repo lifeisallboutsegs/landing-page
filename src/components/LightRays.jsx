@@ -43,6 +43,10 @@ const LightRays = ({
   mouseInfluence = 0.1,
   noiseAmount = 0.0,
   distortion = 0.0,
+  // Resolution ceiling for the ray field. It is a wash of soft gradients with
+  // no edge detail, so a retina backing store doubles the pixel cost and
+  // changes nothing on screen.
+  dprCap = 1.5,
   className = ''
 }) => {
   const containerRef = useRef(null);
@@ -90,7 +94,7 @@ const LightRays = ({
       if (!containerRef.current) return;
 
       const renderer = new Renderer({
-        dpr: Math.min(window.devicePixelRatio, 2),
+        dpr: Math.min(window.devicePixelRatio, dprCap),
         alpha: true
       });
       rendererRef.current = renderer;
@@ -235,7 +239,7 @@ void main() {
       const updatePlacement = () => {
         if (!containerRef.current || !renderer) return;
 
-        renderer.dpr = Math.min(window.devicePixelRatio, 2);
+        renderer.dpr = Math.min(window.devicePixelRatio, dprCap);
 
         const { clientWidth: wCSS, clientHeight: hCSS } = containerRef.current;
         renderer.setSize(wCSS, hCSS);

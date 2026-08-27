@@ -27,6 +27,11 @@ const FadeContent = ({
     const el = ref.current;
     if (!el) return;
 
+    // A fade cannot be allowed to leave useful copy transparent for visitors
+    // who opt out of motion. Keeping the natural DOM state also avoids a
+    // flash of missing content while scroll positions are being refreshed.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     let scrollerTarget = container || document.getElementById('snap-main-container') || null;
     if (typeof scrollerTarget === 'string') {
       scrollerTarget = document.querySelector(scrollerTarget);

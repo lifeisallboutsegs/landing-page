@@ -24,6 +24,7 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
   let mouse = { x: 0, y: 0 };
 
   useEffect(() => {
+    let animationFrame = null;
     const handleMouseMove = ev => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       mouse = getMousePos(ev, containerRef?.current);
@@ -69,7 +70,7 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
         opacity: 1
       });
 
-      requestAnimationFrame(render);
+      animationFrame = requestAnimationFrame(render);
 
       target.removeEventListener('mousemove', onMouseMove);
     };
@@ -118,7 +119,7 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
       gsap.set(lineVerticalRef.current, { x: renderedStyles.tx.previous });
       gsap.set(lineHorizontalRef.current, { y: renderedStyles.ty.previous });
 
-      requestAnimationFrame(render);
+      animationFrame = requestAnimationFrame(render);
     };
 
     const links = containerRef?.current ? containerRef.current.querySelectorAll('a') : document.querySelectorAll('a');
@@ -135,6 +136,8 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
         link.removeEventListener('mouseenter', enter);
         link.removeEventListener('mouseleave', leave);
       });
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+      tl.kill();
     };
   }, [containerRef]);
 

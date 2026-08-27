@@ -16,26 +16,29 @@ import BlurText from '@/components/BlurText';
 import AnimatedContent from '@/components/AnimatedContent';
 import Magnet from '@/components/Magnet';
 import { useInView } from '@/hooks/use-in-view';
+import { QUALITY, useQuality } from '@/hooks/use-quality';
 import { useSnapTransition } from '@/hooks/use-snap-transition';
+import SectionCursor from '@/components/SectionCursor';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Clock, MessageSquare, ShieldCheck } from 'lucide-react';
 
 const FOOTER_LINKS = [
   {
     heading: 'Services',
     links: [
-      { label: 'Landing pages', href: '/#build' },
-      { label: 'Website builds', href: '/#build' },
-      { label: 'SEO', href: '/#attract' },
-      { label: 'Google Ads', href: '/#attract' },
-      { label: 'Conversion review', href: '/#convert' },
+      { label: 'Landing pages', href: '/services/landing-pages' },
+      { label: 'Website builds', href: '/services/websites' },
+      { label: 'SEO', href: '/services/seo' },
+      { label: 'Google Ads', href: '/services/google-ads' },
+      { label: 'Conversion review', href: '/services/conversion-review' },
     ],
   },
   {
     heading: 'Company',
     links: [
-      { label: 'Work', href: '/#proof' },
-      { label: 'Process', href: '/#convert' },
-      { label: 'Contact', href: '/#start' },
+      { label: 'Work', href: '/work' },
+      { label: 'About', href: '/about' },
+      { label: 'Process', href: '/process' },
+      { label: 'Contact', href: '/contact' },
     ],
   },
   {
@@ -47,8 +50,11 @@ const FOOTER_LINKS = [
   },
 ];
 
-/** Point this at the real backend via VITE_LEAD_ENDPOINT at build time. */
-const LEAD_ENDPOINT = import.meta.env.VITE_LEAD_ENDPOINT || '/api/leads';
+/**
+ * The Postgres-backed lead route. Same-origin by default; override with
+ * NEXT_PUBLIC_LEAD_ENDPOINT only if the API is ever split onto another host.
+ */
+const LEAD_ENDPOINT = process.env.NEXT_PUBLIC_LEAD_ENDPOINT || '/api/leads';
 
 const AFTER_SEND = [
   {
@@ -161,7 +167,7 @@ function LeadForm() {
   };
 
   const shell =
-    'relative overflow-hidden rounded-2xl border border-white/70 bg-white/70 p-8 shadow-[0_12px_50px_rgba(11,11,18,0.10)] backdrop-blur-xl md:p-10';
+    'relative overflow-hidden rounded-2xl border border-white/70 bg-white/80 p-6 shadow-[0_12px_50px_rgba(11,11,18,0.10)] backdrop-blur-lg sm:p-8 md:p-10';
 
   if (status === 'sent') {
     return (
@@ -448,7 +454,16 @@ export default function SnapStart() {
   const [bgRef] = useInView();
   // The globe band needs its own observer — sharing bgRef would leave only the
   // element that mounted last actually attached.
-  const [globeRef, globeLive] = useInView();
+  // Eager: three.js plus three-globe is the most expensive mount on the page,
+  // and it sits at the very bottom — assembled on approach, it was still
+  // resolving as the reader arrived. Built during the first idle moment
+  // instead, it is simply already there.
+  const [globeRef, globeLive, globeVisible] = useInView({ eager: true });
+  // three.js, three-globe and a continuous auto-rotate, for something that sits
+  // behind the copy at low opacity and is cropped by the panel on two sides.
+  // Where that cannot be afforded the panel simply does not carry it — and the
+  // reserved corner comes back as page instead of empty space.
+  const globe = useQuality() >= QUALITY.LOW;
 
   return (
     <section
@@ -482,15 +497,20 @@ export default function SnapStart() {
             lands in the empty space under the copy, clear of every line of
             type. The panel is tinted rather than white so it separates from the
             page without another sheet of paper on paper. */}
-        <div className="mx-auto w-full max-w-[1600px] px-8 py-28 md:px-16">
-          <div className="relative overflow-hidden rounded-[2rem] border border-line bg-gradient-to-br from-porcelain via-paper to-porcelain px-8 pt-14 pb-[15rem] shadow-[0_24px_80px_rgba(11,11,18,0.08)] md:px-14 md:pt-16 md:pb-[17rem]">
+        <div className="mx-auto w-full max-w-[1800px] px-6 py-20 sm:px-8 sm:py-28 md:px-16">
+          <div
+            className={`relative overflow-hidden rounded-[2rem] border border-line bg-gradient-to-br from-porcelain via-paper to-porcelain px-6 pt-12 shadow-[0_24px_80px_rgba(11,11,18,0.08)] sm:px-10 sm:pt-16 md:px-16 md:pt-20 xl:px-20 ${
+              globe ? 'pb-[15rem] md:pb-[19rem]' : 'pb-12 sm:pb-14 md:pb-20'
+            }`}
+          >
             <div
               ref={globeRef}
               className="pointer-events-none absolute -bottom-[19rem] -left-[10rem] size-[34rem] md:-bottom-[22rem] md:-left-[7rem] md:size-[40rem]"
             >
-              {globeLive && (
+              {globe && globeLive && (
                 <Globe3D
                   className="h-full w-full"
+                  frameloop={globeVisible ? 'always' : 'never'}
                   config={{
                     autoRotateSpeed: 0.22,
                     showAtmosphere: true,
@@ -504,7 +524,7 @@ export default function SnapStart() {
               )}
             </div>
 
-            <div className="relative z-10 grid grid-cols-1 gap-16 lg:grid-cols-[1fr_minmax(0,30rem)] lg:gap-24">
+            <div className="start-workbench relative z-10 grid min-h-[38rem] grid-cols-1 gap-12 sm:gap-16 lg:gap-28">
             <div className="flex flex-col justify-center">
               <h2 className="mb-8 max-w-3xl text-[clamp(2.4rem,4.8vw,4.6rem)] font-semibold leading-[1] tracking-[-0.045em]">
                 <SplitText
@@ -622,7 +642,7 @@ export default function SnapStart() {
 
         {/* Footer */}
         <footer className="border-t border-line bg-paper">
-          <div className="mx-auto w-full max-w-[1600px] px-8 py-16 md:px-16">
+          <div className="mx-auto w-full max-w-[1600px] px-6 py-14 sm:px-8 sm:py-16 md:px-16">
             <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
               <div className="col-span-2 md:col-span-1">
                 <span className="mb-4 block text-sm font-semibold tracking-tight">
@@ -688,6 +708,7 @@ export default function SnapStart() {
           </div>
         </footer>
       </div>
+      <SectionCursor sectionId="start" variant="orbit" color="#1b4be0" />
     </section>
   );
 }

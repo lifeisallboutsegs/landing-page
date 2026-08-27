@@ -214,7 +214,12 @@ export const CloudShader = ({
   count = 6,
   cloudColor = "#fbf8f2",
   skyTopColor = "#3876ba",
-  skyBottomColor = "#8cbfe8"
+  skyBottomColor = "#8cbfe8",
+  // This is a raymarched cloud field: its cost is the pixel count times the
+  // march, and it is by some distance the most expensive thing on the page.
+  // Both of these let the caller stop paying for it when nobody is looking.
+  dprCap = 2,
+  paused = false
 }) => {
   const canvasRef = useRef(null);
   const paramsRef = useRef({
@@ -232,6 +237,12 @@ export const CloudShader = ({
     skyTopColor,
     skyBottomColor,
   };
+
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  const dprRef = useRef(dprCap);
+  dprRef.current = dprCap;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -277,7 +288,7 @@ export const CloudShader = ({
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, dprRef.current);
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       const w = Math.max(1, Math.floor(width * dpr));
@@ -294,11 +305,23 @@ export const CloudShader = ({
     observer.observe(canvas);
     resize();
 
-    const start = performance.now();
+    // Elapsed-while-running, not wall clock: a sky that was paused off screen
+    // should come back where it was rather than several minutes downwind.
+    let elapsed = 0;
+    let previous = 0;
+
     const draw = (now) => {
       if (!running) return;
       const p = paramsRef.current;
-      const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
+      const delta = previous ? now - previous : 0;
+      previous = now;
+
+      if (pausedRef.current || document.hidden) {
+        frame = requestAnimationFrame(draw);
+        return;
+      }
+
+      if (!reduceMotion) elapsed += (delta / 1000) * p.speed;
       const cloud = parseHex(p.cloudColor);
       const skyTop = parseHex(p.skyTopColor);
       const skyBottom = parseHex(p.skyBottomColor);

@@ -6,6 +6,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const GhostCursor = ({
+  containerRef,
   className,
   style,
   trailLength = 50,
@@ -27,7 +28,7 @@ const GhostCursor = ({
   fadeDurationMs,
   zIndex = 10
 }) => {
-  const containerRef = useRef(null);
+  const hostRef = useRef(null);
   const rendererRef = useRef(null);
   const composerRef = useRef(null);
   const materialRef = useRef(null);
@@ -210,8 +211,8 @@ const GhostCursor = ({
   }
 
   useEffect(() => {
-    const host = containerRef.current;
-    const parent = host?.parentElement;
+    const host = hostRef.current;
+    const parent = containerRef?.current ?? host?.parentElement;
     if (!host || !parent) return;
 
     let active = true;
@@ -519,7 +520,7 @@ const GhostCursor = ({
 
   return (
     <div
-      ref={containerRef}
+      ref={hostRef}
       className={`ghost-cursor ${className ?? ''}`}
       style={mergedStyle} />
   );

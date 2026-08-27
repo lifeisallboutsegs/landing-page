@@ -1,4 +1,4 @@
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://developwitharim.com';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://digitalwebassurances.com';
 
 /**
  * Generated rather than a static file so the sitemap URL always matches the

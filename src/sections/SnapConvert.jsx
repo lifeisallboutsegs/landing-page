@@ -3,7 +3,9 @@ import { TracingBeam } from '@/components/ui/tracing-beam';
 import AcidSquares from '@/components/AcidSquares';
 import SectionIntro from '@/sections/SectionIntro';
 import ScrollReveal from '@/components/ScrollReveal';
+import SectionCursor from '@/components/SectionCursor';
 import { useInView } from '@/hooks/use-in-view';
+import { QUALITY, dprCapFor, useQuality } from '@/hooks/use-quality';
 
 const STAGES = [
   {
@@ -37,7 +39,12 @@ export default function SnapConvert() {
   const lattice = useRef(null);
   const scrim = useRef(null);
   const content = useRef(null);
-  const [bgRef, bgLive] = useInView();
+  const [bgRef, bgLive, bgVisible] = useInView();
+  const tier = useQuality();
+  // The lattice is a multi-octave fragment shader across the whole viewport and
+  // its only interactive half is the mouse. Where there is no mouse and no
+  // headroom it is replaced by the gradient it resolves to anyway.
+  const lattice3d = tier >= QUALITY.LOW;
 
   // Driven straight off the scroll position rather than through a motion
   // library. This predates the runtime cleanup (the project used to have both
@@ -119,8 +126,17 @@ export default function SnapConvert() {
             'linear-gradient(to bottom, transparent 0, #000 16rem, #000 calc(100% - 10rem), transparent 100%)',
         }}
       >
-        <div ref={bgRef} className="pointer-events-auto sticky top-0 h-screen w-full">
-          {bgLive && (
+        <div ref={bgRef} className="pointer-events-auto sticky top-0 h-[100svh] w-full">
+          {!lattice3d && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'radial-gradient(ellipse 70% 50% at 30% 25%, rgba(124,58,237,0.55) 0%, rgba(26,16,70,0) 70%), radial-gradient(ellipse 60% 45% at 78% 72%, rgba(205,184,255,0.30) 0%, rgba(26,16,70,0) 68%), linear-gradient(160deg, #1a1046 0%, #07070e 100%)',
+              }}
+            />
+          )}
+          {lattice3d && bgLive && (
             <AcidSquares
               color1="#1a1046"
               color2="#7c3aed"
@@ -134,11 +150,12 @@ export default function SnapConvert() {
               exposure={2400}
               brightness={1.05}
               opacity={1}
-              mouseInteraction
+              mouseInteraction={bgVisible}
               mouseStrength={0.14}
               mouseRadius={0.34}
               grain
               grainIntensity={0.04}
+              dprCap={dprCapFor(tier)}
             />
           )}
         </div>
@@ -148,7 +165,7 @@ export default function SnapConvert() {
           the text column sitting over it. */}
       <div ref={scrim} className="pointer-events-none absolute inset-0 z-[5]" style={{ opacity: 1 }}>
         <div
-          className="sticky top-0 h-screen w-full"
+          className="sticky top-0 h-[100svh] w-full"
           style={{
             background:
               'radial-gradient(ellipse 38% 58% at 40% 50%, rgba(7,7,14,0.72) 0%, rgba(7,7,14,0.34) 52%, rgba(7,7,14,0) 82%)',
@@ -156,21 +173,28 @@ export default function SnapConvert() {
         />
       </div>
 
+      <img
+        src="/assets/conversion-path.png"
+        alt=""
+        aria-hidden="true"
+        className="conversion-path-art pointer-events-none absolute right-[6%] top-[28rem] z-[6] hidden w-[min(21vw,20rem)] select-none object-contain opacity-60 lg:block"
+      />
+
       {/* Pointer events fall through the wrapper so the lattice behind it can
           still see the mouse; the text itself stays selectable. */}
       <div ref={content} className="pointer-events-none relative z-10" style={{ opacity: 1 }}>
         {/* SectionIntro is built for the light half of the page, so its ink
             colours are inverted here rather than forking the component. */}
-        <div className="pointer-events-auto [&_p]:!text-white/70 [&_span]:!text-white">
+        <div className="pointer-events-auto [&_h2]:!text-white [&_p]:!text-white/70">
           <SectionIntro
             headline="Traffic is useless if nobody takes action."
             body="This is the part most agencies skip. Between arriving and enquiring there are four things a visitor has to do — and each one is a place you can lose them."
           />
         </div>
 
-        <div className="pointer-events-auto mx-auto w-full max-w-3xl px-8 pt-10 pb-28 md:px-16">
+        <div className="pointer-events-auto mx-auto w-full max-w-3xl px-6 pt-8 pb-20 sm:px-8 sm:pt-10 sm:pb-28 md:px-16">
           <TracingBeam className="!max-w-3xl">
-            <div className="flex flex-col gap-28 pl-4 md:pl-8">
+            <div className="flex flex-col gap-20 pl-6 sm:gap-28 sm:pl-4 md:pl-8">
               {STAGES.map((stage) => (
                 <article key={stage.title}>
                   <span className="mb-5 block text-[0.95rem] font-semibold tracking-tight text-[#8fa6ff]">
@@ -187,10 +211,10 @@ export default function SnapConvert() {
             </div>
           </TracingBeam>
 
-          <div className="mx-auto mt-32 max-w-3xl border-t border-white/15 pt-14 text-center">
+          <div className="mx-auto mt-24 max-w-3xl border-t border-white/15 pt-10 text-center sm:mt-32 sm:pt-14">
             <ScrollReveal
               containerClassName="mx-auto !overflow-visible py-1"
-              textClassName="!text-[clamp(1.3rem,2.2vw,1.9rem)] !leading-[1.5] !font-normal tracking-[-0.025em] !text-white"
+              textClassName="!text-[clamp(1.15rem,4.4vw,1.9rem)] !leading-[1.5] !font-normal tracking-[-0.025em] !text-white"
               baseOpacity={0.1}
               baseRotation={2}
               blurStrength={5}
@@ -201,6 +225,7 @@ export default function SnapConvert() {
           </div>
         </div>
       </div>
+      <SectionCursor sectionId="convert" variant="crosshair" color="rgba(167,139,250,0.36)" />
     </section>
   );
 }

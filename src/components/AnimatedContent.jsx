@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -27,9 +27,13 @@ const AnimatedContent = ({
 }) => {
   const ref = useRef(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    // Motion should never be a gate to content. This also protects visitors
+    // who request reduced motion from a trigger that has not fired yet.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let scrollerTarget = container || document.getElementById('snap-main-container') || null;
 
@@ -107,7 +111,7 @@ const AnimatedContent = ({
   ]);
 
   return (
-    <div ref={ref} className={`invisible ${className}`} {...props}>
+    <div ref={ref} className={className} {...props}>
       {children}
     </div>
   );

@@ -8,8 +8,8 @@ import {
   ModalTrigger,
 } from '@/components/ui/animated-modal';
 import AnimatedContent from '@/components/AnimatedContent';
-import { useInView } from '@/hooks/use-in-view';
 import { useSnapTransition } from '@/hooks/use-snap-transition';
+import SectionCursor from '@/components/SectionCursor';
 import { ArrowUpRight } from 'lucide-react';
 
 /**
@@ -49,14 +49,12 @@ const PROJECTS = [
 
 export default function SnapProof() {
   const motionRef = useSnapTransition();
-  const [bgRef] = useInView();
 
   return (
     <section id="proof" data-snap="proof" className="relative z-10 w-full overflow-clip bg-paper text-ink">
       {/* Mouse-reactive iridescent wash — the abstract world giving way to
           something tangible, so the field is calmer than the earlier snaps. */}
       <div
-        ref={bgRef}
         className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
@@ -88,7 +86,7 @@ export default function SnapProof() {
         {/* Each case study opens rather than being dumped on the page. The
             full write-up used to sit in a second grid underneath the cards,
             which meant reading the same three titles twice. */}
-        <div className="mx-auto mt-16 w-full max-w-[1600px] px-8 md:px-16">
+        <div className="mx-auto mt-12 w-full max-w-[1600px] px-6 sm:mt-16 sm:px-8 md:px-16">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
             {PROJECTS.map((project, i) => (
               <AnimatedContent
@@ -170,19 +168,20 @@ export default function SnapProof() {
           delay={0.2}
           duration={0.9}
           ease="power3.out"
-          className="mx-auto mt-20 w-full max-w-[1600px] px-8 md:px-16"
+          className="mx-auto mt-16 w-full max-w-[1600px] px-6 sm:mt-20 sm:px-8 md:px-16"
         >
           <a
             href="#start"
-            className="group flex items-center justify-between border-t border-line pt-8 text-ink transition-colors hover:text-cobalt"
+            className="group flex flex-col items-start gap-5 border-t border-line pt-8 text-ink transition-colors hover:text-cobalt sm:flex-row sm:items-center sm:justify-between sm:gap-8"
           >
-            <span className="text-[clamp(1.2rem,2.1vw,1.7rem)] font-semibold tracking-[-0.025em]">
+            <span className="text-[clamp(1.15rem,4.6vw,1.7rem)] font-semibold tracking-[-0.025em]">
               Want the full case study, including the parts that didn't work?
             </span>
-            <ArrowUpRight className="h-6 w-6 shrink-0 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+            <ArrowUpRight className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 sm:h-6 sm:w-6" />
           </a>
         </AnimatedContent>
       </div>
+      <SectionCursor sectionId="proof" variant="orbit" color="#1b4be0" />
     </section>
   );
 }
