@@ -18,7 +18,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const NAV_ITEMS = [
   { label: 'Work', href: '/work' },
-  { label: 'Services', href: '/services/landing-pages' },
+  { label: 'Services', href: '/services' },
   { label: 'About', href: '/about' },
   { label: "Let's talk", href: '/contact' },
 ];

@@ -13,36 +13,38 @@ import SectionCursor from '@/components/SectionCursor';
 import { ArrowUpRight } from 'lucide-react';
 
 /**
- * Deliberately descriptive rather than numeric. The brief is explicit that we
- * do not invent statistics, awards or client counts — so the work speaks in
- * scope and decisions, and real figures go in once they exist.
+ * These are working methods, not invented client case studies. Real project
+ * names, screenshots and outcomes only belong here once they are supplied.
  */
 const PROJECTS = [
   {
-    category: 'Marketing site',
-    title: 'A trades company that stopped competing on price',
-    src: '/assets/demo/cs1.webp',
+    category: 'Page systems',
+    title: 'A page is designed across every screen, not just the desktop.',
+    src: '/assets/website-build-system.png',
+    alt: 'A responsive website system represented by desktop, tablet and mobile layouts',
     body: [
-      'The old site listed services. The new one leads with the thing customers actually worry about — how quickly someone turns up, and what it will cost before work starts.',
-      'We rebuilt the page around a single enquiry action, cut the load to a fraction of what it was, and rewrote every heading in the language customers used on the phone.',
+      'We shape the offer, the content hierarchy and the next action as one system before visual polish arrives.',
+      'The build is tested across the screens and moments where a visitor has to decide whether to keep going.',
     ],
   },
   {
-    category: 'SaaS product',
-    title: 'A product page that explains itself in one screen',
-    src: '/assets/demo/cs2.webp',
+    category: 'Strategy artifacts',
+    title: 'The structure is decided before the pixels are polished.',
+    src: '/assets/work-strategy-workbench.png',
+    alt: 'Website wireframes and planning materials on a strategy workbench',
     body: [
-      'Technical products lose people in the first paragraph. We led with the outcome, moved the architecture below the fold, and let the interface do the explaining.',
-      'Onboarding copy, empty states and the pricing table were treated as part of the same argument rather than separate pages.',
+      'Wireframes turn vague requests into a sequence a visitor can follow without being pushed through a maze.',
+      'Every block has a job: clarify the offer, answer a doubt, show evidence or make the next action easier.',
     ],
   },
   {
-    category: 'Search & paid',
-    title: 'Two channels pointed at one landing page',
-    src: '/assets/demo/cs3.webp',
+    category: 'Demand alignment',
+    title: 'Search, ads and landing pages are one customer journey.',
+    src: '/assets/google-ads-calibration.png',
+    alt: 'A campaign calibration dial with measurement cards and budget markers',
     body: [
-      'Organic and paid were being run as separate projects against separate pages. We consolidated them onto one destination and let the paid data inform which organic pages were worth building.',
-      'Negative keyword discipline did most of the early work — cutting spend on terms that were never going to convert.',
+      'The terms a person searches, the promise they see and the page they land on must make sense together.',
+      'Measurement is used to find the useful signals and decide what to improve next — not to decorate a report.',
     ],
   },
 ];
@@ -80,7 +82,7 @@ export default function SnapProof() {
       <div ref={motionRef} className="relative z-10 pb-24">
         <SectionIntro
           headline="We've actually built this."
-          body="Enough metaphor. This is real work — the decisions behind it, what changed, and why. Where genuine numbers exist we show them; where they don't, we don't invent them."
+          body="The method behind the work: how we make a page clearer, align demand with the destination, and give each next decision a reason."
         />
 
         {/* Each case study opens rather than being dumped on the page. The
@@ -102,7 +104,7 @@ export default function SnapProof() {
                     <span className="relative block aspect-[4/3] w-full overflow-hidden">
                       <img
                         src={project.src}
-                        alt=""
+                        alt={project.alt}
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                       />
                       <span className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
@@ -116,7 +118,7 @@ export default function SnapProof() {
                         {project.title}
                       </span>
                       <span className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-ink-soft transition-colors group-hover:text-ink">
-                        Read the decisions
+                        Explore the method
                         <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </span>
                     </span>
@@ -125,7 +127,7 @@ export default function SnapProof() {
                   <ModalBody className="md:max-w-2xl">
                     <ModalContent className="!p-0">
                       <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden">
-                        <img src={project.src} alt="" className="h-full w-full object-cover" />
+                        <img src={project.src} alt={project.alt} className="h-full w-full object-cover" />
                       </div>
 
                       <div className="flex flex-col overflow-y-auto p-8 md:p-10">

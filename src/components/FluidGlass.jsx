@@ -228,11 +228,11 @@ function Images() {
 
   return (
     <group ref={group}>
-      <Image position={[-2, 0, 0]} scale={[3, height / 1.1, 1]} url="/assets/demo/cs1.webp" />
-      <Image position={[2, 0, 3]} scale={3} url="/assets/demo/cs2.webp" />
-      <Image position={[-2.05, -height, 6]} scale={[1, 3, 1]} url="/assets/demo/cs3.webp" />
-      <Image position={[-0.6, -height, 9]} scale={[1, 2, 1]} url="/assets/demo/cs1.webp" />
-      <Image position={[0.75, -height, 10.5]} scale={1.5} url="/assets/demo/cs2.webp" />
+      <Image position={[-2, 0, 0]} scale={[3, height / 1.1, 1]} url="/assets/website-build-system.png" />
+      <Image position={[2, 0, 3]} scale={3} url="/assets/work-strategy-workbench.png" />
+      <Image position={[-2.05, -height, 6]} scale={[1, 3, 1]} url="/assets/project-brief-contact.png" />
+      <Image position={[-0.6, -height, 9]} scale={[1, 2, 1]} url="/assets/website-build-system.png" />
+      <Image position={[0.75, -height, 10.5]} scale={1.5} url="/assets/work-strategy-workbench.png" />
     </group>
   );
 }

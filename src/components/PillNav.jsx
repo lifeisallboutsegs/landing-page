@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 const PillNav = ({
   logo,
   logoAlt = 'Logo',
+  homeHref = '/',
   items,
   activeHref,
   className = '',
@@ -232,9 +233,9 @@ const PillNav = ({
         className={`w-full md:w-max flex items-center justify-between md:justify-start box-border px-4 md:px-0 ${className}`}
         aria-label="Primary"
         style={cssVars}>
-        {isRouterLink(items?.[0]?.href) ? (
+        {isRouterLink(homeHref) ? (
           <Link
-            href={items[0].href}
+            href={homeHref}
             aria-label="Home"
             onMouseEnter={handleLogoEnter}
             role="menuitem"
@@ -255,7 +256,7 @@ const PillNav = ({
           </Link>
         ) : (
           <a
-            href={items?.[0]?.href || '#'}
+            href={homeHref || '#'}
             aria-label="Home"
             onMouseEnter={handleLogoEnter}
             ref={el => {

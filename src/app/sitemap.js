@@ -30,6 +30,7 @@ export default function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    { url: `${SITE}/services`, lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
     ...servicePages,
     ...companyPages,
   ];
