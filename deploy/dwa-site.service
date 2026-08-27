@@ -1,0 +1,49 @@
+# /etc/systemd/system/dwa-site.service
+[Unit]
+Description=Digital Web Assurances website (Next.js)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=dwa
+Group=dwa
+WorkingDirectory=/var/www/dwa-site
+
+# output: 'standalone' bundles the server and its dependencies into
+# .next/standalone, so production does not need node_modules on the box.
+ExecStart=/usr/bin/node .next/standalone/server.js
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+# Secrets live in a root-owned file the service user can read, never in this
+# unit - `systemctl cat` is world readable.
+EnvironmentFile=/etc/dwa-site.env
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dwa-site
+
+# Hardening. The app only needs to read its own directory and talk to the
+# network; everything else is denied.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/dwa-site/.next/cache
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictSUIDSGID=true
+RemoveIPC=true
+
+[Install]
+WantedBy=multi-user.target

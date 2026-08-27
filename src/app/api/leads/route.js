@@ -86,7 +86,7 @@ export async function POST(request) {
     // a silently swallowed enquiry is the exact failure this build is fixing.
     console.error('[leads] failed to store enquiry', error);
     return NextResponse.json(
-      { error: "That didn't send. Please email hello@digitalwebassurances.com and we'll pick it up." },
+      { error: "That didn't send. Please email admin@developwitharim.com and we'll pick it up." },
       { status: 500 },
     );
   }

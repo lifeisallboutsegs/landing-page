@@ -431,7 +431,7 @@ function LeadForm() {
           </Magnet>
         )}
 
-        <span className="text-[0.8rem] text-ink-faint">Or email hello@digitalwebassurances.com</span>
+        <span className="text-[0.8rem] text-ink-faint">Or email admin@developwitharim.com</span>
       </div>
 
       {status === 'error' && (
@@ -628,9 +628,31 @@ export default function SnapStart() {
                 <span className="mb-4 block text-sm font-semibold tracking-tight">
                   Digital Web Assurances
                 </span>
-                <p className="max-w-xs text-[0.9rem] leading-relaxed text-ink-soft">
+                <p className="mb-6 max-w-xs text-[0.9rem] leading-relaxed text-ink-soft">
                   We build the digital system that turns attention into customers.
                 </p>
+                <ul className="flex flex-col gap-2 text-[0.9rem] text-ink-soft">
+                  <li>
+                    <a href="mailto:admin@developwitharim.com" className="transition-colors hover:text-ink">
+                      admin@developwitharim.com
+                    </a>
+                  </li>
+                  <li>
+                    <a href="tel:+8801518991960" className="transition-colors hover:text-ink">
+                      +880 1518 991960
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://wa.me/8801518991960"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="transition-colors hover:text-ink"
+                    >
+                      WhatsApp
+                    </a>
+                  </li>
+                </ul>
               </div>
 
               {FOOTER_LINKS.map((group) => (

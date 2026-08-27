@@ -32,11 +32,13 @@ function transporter() {
     secure: false,
     requireTLS: true,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
-    // This host still serves the stock self-signed certificate (CN "etc"), so
-    // strict verification cannot pass. Opting out is explicit and logged rather
-    // than hidden: the session is still encrypted, but it is not authenticated,
-    // so a network attacker in path could intercept it. Install a real
-    // certificate on the mail server and drop this flag.
+    // Strict verification is ON. It only works with the right SNI: the MX
+    // hostname contains underscores (illegal in SNI) and is not in the
+    // certificate's SAN, so sending it makes the server fall back to a
+    // self-signed default and the handshake fails. SMTP_TLS_SERVERNAME sends the
+    // apex name, which the real Let's Encrypt certificate covers.
+    // The opt-out below exists for hosts without a valid certificate; leaving it
+    // unset means encrypted AND authenticated, which is what we want.
     tls: {
       rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
       servername: process.env.SMTP_TLS_SERVERNAME || undefined,
