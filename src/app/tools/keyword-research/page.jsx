@@ -19,30 +19,13 @@ export const metadata = {
 };
 
 export default function KeywordResearchPage() {
+  // The heading and intro live inside the client component so they can collapse
+  // once results arrive — without that, every query pushes the table below the
+  // fold. They are still server-rendered into the HTML, so nothing is lost to
+  // crawlers.
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <div className="mx-auto w-full max-w-[1100px] px-8 py-24 md:px-12">
-        <a
-          href="/"
-          className="mb-12 inline-block text-[0.85rem] font-medium text-ink-soft transition-colors hover:text-ink"
-        >
-          ← Digital Web Assurances
-        </a>
-
-        <span className="mb-5 block text-[0.8rem] font-semibold tracking-tight text-cobalt">
-          Free tool
-        </span>
-        <h1 className="mb-6 max-w-3xl text-[clamp(2.1rem,4.4vw,3.6rem)] font-semibold leading-[1.04] tracking-[-0.04em]">
-          Find what your customers are actually typing.
-        </h1>
-        <p className="mb-14 max-w-2xl text-[1.05rem] leading-relaxed text-ink-soft">
-          Enter the service you sell and where you sell it. We expand it against live search
-          suggestions, group the results by what the searcher wants, and rank them by how winnable
-          they look.
-        </p>
-
-        <KeywordTool />
-      </div>
+    <main className="h-screen overflow-hidden bg-paper text-ink">
+      <KeywordTool />
     </main>
   );
 }

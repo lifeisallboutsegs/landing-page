@@ -22,15 +22,28 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Clock, MessageSquare, Shiel
 const FOOTER_LINKS = [
   {
     heading: 'Services',
-    links: ['Landing pages', 'Website builds', 'SEO', 'Google Ads', 'Conversion review'],
+    links: [
+      { label: 'Landing pages', href: '/#build' },
+      { label: 'Website builds', href: '/#build' },
+      { label: 'SEO', href: '/#attract' },
+      { label: 'Google Ads', href: '/#attract' },
+      { label: 'Conversion review', href: '/#convert' },
+    ],
   },
   {
     heading: 'Company',
-    links: ['Work', 'About', 'Process', 'Contact'],
+    links: [
+      { label: 'Work', href: '/#proof' },
+      { label: 'Process', href: '/#convert' },
+      { label: 'Contact', href: '/#start' },
+    ],
   },
   {
     heading: 'Free tools',
-    links: ['Technical SEO audit', 'Keyword research'],
+    links: [
+      { label: 'Technical SEO audit', href: '/#diagnose' },
+      { label: 'Keyword research', href: '/tools/keyword-research' },
+    ],
   },
 ];
 
@@ -627,12 +640,12 @@ export default function SnapStart() {
                   </span>
                   <ul className="flex flex-col gap-3">
                     {group.links.map((link) => (
-                      <li key={link}>
+                      <li key={link.label}>
                         <a
-                          href="#start"
+                          href={link.href}
                           className="text-[0.92rem] text-ink-soft transition-colors hover:text-ink"
                         >
-                          {link}
+                          {link.label}
                         </a>
                       </li>
                     ))}

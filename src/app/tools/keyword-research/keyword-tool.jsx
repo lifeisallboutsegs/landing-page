@@ -71,67 +71,118 @@ export default function KeywordTool() {
     data?.keywords.filter((k) => intentFilter === 'all' || k.intent === intentFilter) ?? [];
 
   const field =
-    'h-12 w-full rounded-none border-0 border-b border-line bg-transparent px-0 text-[1rem] outline-none transition-colors focus:border-cobalt placeholder:text-ink-faint';
+    'h-11 w-full rounded-none border-0 border-b border-line bg-transparent px-0 text-[0.95rem] outline-none transition-colors focus:border-cobalt placeholder:text-ink-faint';
+
+  const hasResults = Boolean(data);
 
   return (
-    <>
-      <form onSubmit={onSubmit} className="mb-4 grid grid-cols-1 gap-8 md:grid-cols-[1.3fr_1fr_auto]">
-        <label className="block">
-          <span className="mb-2 block text-[0.78rem] font-medium tracking-tight text-ink-soft">
-            What do you sell?
-          </span>
-          <input
-            value={seed}
-            onChange={(e) => setSeed(e.target.value)}
-            placeholder="roof repair"
-            className={field}
-            required
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-2 block text-[0.78rem] font-medium tracking-tight text-ink-soft">
-            Where? <span className="text-ink-faint">(optional)</span>
-          </span>
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="London"
-            className={field}
-          />
-        </label>
-
-        <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={status === 'running'}
-            className="h-12 rounded-full bg-ink px-8 text-[0.9rem] font-medium text-white transition-transform duration-200 active:scale-[0.98] disabled:opacity-60"
+    <div className="flex h-screen flex-col">
+      {/* Header collapses once there are results: the table then starts near the
+          top of the viewport instead of being pushed below the fold. */}
+      <div className="shrink-0 border-b border-line px-8 md:px-12">
+        <div className="mx-auto w-full max-w-[1240px]">
+          <motion.div
+            initial={false}
+            animate={{
+              height: hasResults ? 56 : 'auto',
+              opacity: 1,
+            }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
           >
-            {status === 'running' ? 'Researching…' : 'Find keywords'}
-          </button>
+            {hasResults ? (
+              <div className="flex h-14 items-center gap-4">
+                <a href="/" className="text-[0.85rem] font-medium text-ink-soft hover:text-ink">
+                  ← DWA
+                </a>
+                <span className="text-[0.85rem] text-ink-faint">Keyword research</span>
+              </div>
+            ) : (
+              <div className="pt-16 pb-2">
+                <a
+                  href="/"
+                  className="mb-10 inline-block text-[0.85rem] font-medium text-ink-soft transition-colors hover:text-ink"
+                >
+                  ← Digital Web Assurances
+                </a>
+                <span className="mb-4 block text-[0.8rem] font-semibold tracking-tight text-cobalt">
+                  Free tool
+                </span>
+                <h1 className="mb-5 max-w-3xl text-[clamp(1.9rem,4vw,3.2rem)] font-semibold leading-[1.04] tracking-[-0.04em]">
+                  Find what your customers are actually typing.
+                </h1>
+                <p className="mb-8 max-w-2xl text-[1rem] leading-relaxed text-ink-soft">
+                  Enter the service you sell and where you sell it. We expand it against live
+                  search suggestions, group the results by what the searcher wants, and rank them
+                  by how winnable they look.
+                </p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* The form stays put across both states so submitting never moves it. */}
+          <form
+            onSubmit={onSubmit}
+            className="grid grid-cols-1 gap-6 pb-5 md:grid-cols-[1.2fr_1fr_auto_auto] md:items-end md:gap-8"
+          >
+            <label className="block">
+              <span className="mb-1.5 block text-[0.72rem] font-medium tracking-tight text-ink-soft">
+                What do you sell?
+              </span>
+              <input
+                value={seed}
+                onChange={(e) => setSeed(e.target.value)}
+                placeholder="roof repair"
+                className={field}
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-[0.72rem] font-medium tracking-tight text-ink-soft">
+                Where? <span className="text-ink-faint">(optional)</span>
+              </span>
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="London"
+                className={field}
+              />
+            </label>
+
+            <div className="flex gap-1.5">
+              {['shallow', 'standard', 'deep'].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDepth(d)}
+                  title={d === 'deep' ? 'Slower, many more phrases' : d === 'shallow' ? 'Fastest' : 'Balanced'}
+                  className={`rounded-full border px-3 py-1.5 text-[0.75rem] capitalize transition-all duration-300 ${
+                    depth === d
+                      ? 'border-ink bg-ink text-white'
+                      : 'border-line text-ink-soft hover:border-ink/40'
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="submit"
+              disabled={status === 'running'}
+              className="h-11 rounded-full bg-ink px-7 text-[0.88rem] font-medium text-white transition-transform duration-200 active:scale-[0.98] disabled:opacity-60"
+            >
+              {status === 'running' ? 'Researching…' : 'Find keywords'}
+            </button>
+          </form>
         </div>
-      </form>
-
-      <div className="mb-14 flex flex-wrap items-center gap-2">
-        {['shallow', 'standard', 'deep'].map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => setDepth(d)}
-            className={`rounded-full border px-4 py-1.5 text-[0.8rem] capitalize transition-all duration-300 ${
-              depth === d
-                ? 'border-ink bg-ink text-white'
-                : 'border-line text-ink-soft hover:border-ink/40'
-            }`}
-          >
-            {d}
-          </button>
-        ))}
-        <span className="ml-2 text-[0.8rem] text-ink-faint">
-          {depth === 'deep' ? 'Slower, many more phrases' : depth === 'shallow' ? 'Fastest' : 'Balanced'}
-        </span>
       </div>
 
+      {/* Chrome stays fixed; only the table scrolls, so the first rows are on
+          screen the moment a query returns rather than below a wall of summary. */}
+      <div className="flex min-h-0 flex-1 flex-col px-8 md:px-12">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1240px] flex-1 flex-col py-5">
       {status === 'error' && (
         <p role="alert" className="mb-8 text-[0.95rem] text-red-600">
           {error}
@@ -164,47 +215,46 @@ export default function KeywordTool() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="mb-10 flex flex-wrap items-baseline justify-between gap-4 border-b border-line pb-6">
-            <h2 className="text-[1.3rem] font-semibold tracking-[-0.03em]">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1">
+            <h2 className="text-[1.05rem] font-semibold tracking-[-0.03em]">
               {data.total} phrases for “{data.seed}”
             </h2>
-            <span className="text-[0.82rem] text-ink-faint">Source: {data.provider.label}</span>
+            {/* An estimate must never read as measured data — but it does not
+                need a full-width banner eating the fold, so it sits inline with
+                the full wording on hover. */}
+            {data.disclaimer && (
+              <span
+                className="cursor-help text-[0.76rem] text-amber-700 underline decoration-amber-300 underline-offset-2"
+                title={data.disclaimer}
+              >
+                Estimates, not measured search volume — {data.provider.label}
+              </span>
+            )}
           </div>
 
-          {/* Never let an estimate be mistaken for measured data. */}
-          {data.disclaimer && (
-            <p className="mb-10 max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-[0.88rem] leading-relaxed text-amber-900">
-              {data.disclaimer}
-            </p>
-          )}
-
           {data.clusters.length > 0 && (
-            <div className="mb-12">
-              <h3 className="mb-5 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-ink-faint">
-                Topic clusters
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                {data.clusters.map((c) => (
-                  <span
-                    key={c.topic}
-                    className="rounded-full border border-line px-4 py-2 text-[0.85rem]"
-                    title={c.keywords.join('\n')}
-                  >
-                    {c.topic} <span className="text-ink-faint">{c.count}</span>
-                  </span>
-                ))}
-              </div>
+            <div className="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1">
+              {data.clusters.map((c) => (
+                <span
+                  key={c.topic}
+                  className="shrink-0 rounded-full border border-line px-3 py-1 text-[0.78rem]"
+                  title={c.keywords.join('\n')}
+                >
+                  {c.topic} <span className="text-ink-faint">{c.count}</span>
+                </span>
+              ))}
             </div>
           )}
 
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-2">
             {['all', 'transactional', 'commercial', 'informational', 'navigational'].map((i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setIntentFilter(i)}
-                className={`rounded-full border px-4 py-1.5 text-[0.8rem] capitalize transition-colors ${
+                className={`rounded-full border px-3 py-1 text-[0.76rem] capitalize transition-colors ${
                   intentFilter === i ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft'
                 }`}
               >
@@ -213,54 +263,52 @@ export default function KeywordTool() {
             ))}
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-line">
-            <table className="w-full min-w-[680px] text-left text-[0.92rem]">
-              <thead className="border-b border-line text-[0.72rem] uppercase tracking-[0.12em] text-ink-faint">
+          <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-line">
+            <table className="w-full min-w-[680px] text-left text-[0.88rem]">
+              <thead className="sticky top-0 z-10 border-b border-line bg-paper text-[0.72rem] uppercase tracking-[0.12em] text-ink-faint">
                 <tr>
-                  <th className="px-5 py-3.5 font-medium">Keyword</th>
-                  <th className="px-5 py-3.5 font-medium">Intent</th>
-                  <th className="px-5 py-3.5 font-medium">Difficulty</th>
-                  <th className="px-5 py-3.5 font-medium">Opportunity</th>
+                  <th className="px-4 py-2.5 font-medium">Keyword</th>
+                  <th className="px-4 py-2.5 font-medium">Intent</th>
+                  <th className="px-4 py-2.5 font-medium">Difficulty</th>
+                  <th className="px-4 py-2.5 font-medium">Opportunity</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {rows.map((k) => (
                   <tr key={k.keyword} className="transition-colors hover:bg-porcelain/60">
-                    <td className="px-5 py-3.5">{k.keyword}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-2">{k.keyword}</td>
+                    <td className="px-4 py-2">
                       <span
                         className={`rounded-full px-2.5 py-1 text-[0.72rem] font-medium ${INTENT_TONE[k.intent]}`}
                       >
                         {k.intent}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-2">
                       <DifficultyBar value={k.difficulty} />
                     </td>
-                    <td className="px-5 py-3.5 tabular-nums font-medium">{k.opportunity}</td>
+                    <td className="px-4 py-2 tabular-nums font-medium">{k.opportunity}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <div className="mt-14 rounded-2xl border border-line bg-porcelain px-8 py-10 text-center">
-            <h3 className="mb-3 text-[1.2rem] font-semibold tracking-[-0.02em]">
-              Want these turned into pages that rank?
-            </h3>
-            <p className="mx-auto mb-7 max-w-lg text-[0.95rem] leading-relaxed text-ink-soft">
-              That is the work we do. Tell us which of these matter to your business and we will
-              tell you honestly what it would take.
-            </p>
+          <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-3 pt-1">
+            <span className="text-[0.82rem] text-ink-soft">
+              Want these turned into pages that rank? That is the work we do.
+            </span>
             <a
               href="/#start"
-              className="inline-block rounded-full bg-ink px-8 py-3.5 text-[0.9rem] font-medium text-white"
+              className="rounded-full bg-ink px-5 py-2 text-[0.82rem] font-medium text-white"
             >
               Start a project
             </a>
           </div>
         </motion.div>
       )}
-    </>
+        </div>
+      </div>
+    </div>
   );
 }

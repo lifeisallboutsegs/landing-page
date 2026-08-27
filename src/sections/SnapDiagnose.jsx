@@ -301,6 +301,14 @@ export default function SnapDiagnose() {
                   <span>No login</span>
                   <span>Report is yours</span>
                 </div>
+
+                <a
+                  href="/tools/keyword-research"
+                  className="group mt-6 inline-flex w-fit items-center gap-2.5 text-[0.85rem] font-medium text-ink-soft transition-colors hover:text-ink"
+                >
+                  Also free: the keyword research tool
+                  <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+                </a>
               </div>
             </AnimatedContent>
 

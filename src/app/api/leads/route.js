@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { db, schema } from '@/server/db/index.js';
 import { clientIp, hashIp, leadSchema, splitAttribution } from '@/server/leads.js';
+import { sendLeadAcknowledgement, sendLeadNotification } from '@/server/mail.js';
 import { rateLimit } from '@/server/rate-limit.js';
 
 // Touches the database on every call, so it must never be statically evaluated.
@@ -68,6 +69,16 @@ export async function POST(request) {
         userAgent: request.headers.get('user-agent')?.slice(0, 500) ?? null,
       })
       .returning({ id: schema.leads.id, createdAt: schema.leads.createdAt });
+
+    // The enquiry is already committed, so mail is deliberately not awaited and
+    // its failures cannot reach the visitor. A notification that does not arrive
+    // is an inconvenience; a form that errors because the mail host is down
+    // would cost a customer. Failures are logged inside the mailer.
+    const forMail = { ...data, ...attribution };
+    void Promise.allSettled([
+      sendLeadNotification(forMail),
+      sendLeadAcknowledgement(forMail),
+    ]);
 
     return NextResponse.json({ ok: true, id: row.id }, { status: 201 });
   } catch (error) {
