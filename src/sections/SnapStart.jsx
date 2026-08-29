@@ -19,16 +19,20 @@ import { useInView } from '@/hooks/use-in-view';
 import { QUALITY, useQuality } from '@/hooks/use-quality';
 import { useSnapTransition } from '@/hooks/use-snap-transition';
 import SectionCursor from '@/components/SectionCursor';
+import { useSiteContent } from '@/lib/use-site-content';
+import { trackLead } from '@/lib/analytics';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Clock, MessageSquare, ShieldCheck } from 'lucide-react';
 
 const FOOTER_LINKS = [
   {
     heading: 'Services',
     links: [
+      { label: 'MERN websites', href: '/services/websites' },
       { label: 'Landing pages', href: '/services/landing-pages' },
-      { label: 'Website builds', href: '/services/websites' },
       { label: 'SEO', href: '/services/seo' },
       { label: 'Google Ads', href: '/services/google-ads' },
+      { label: 'Meta Ads', href: '/services/meta-ads' },
+      { label: 'Server-side tracking', href: '/services/analytics' },
       { label: 'Conversion review', href: '/services/conversion-review' },
     ],
   },
@@ -112,6 +116,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * screen.
  */
 function LeadForm() {
+  const { global } = useSiteContent();
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
   const [step, setStep] = useState(0);
@@ -160,6 +165,9 @@ function LeadForm() {
       });
       if (!response.ok) throw new Error(`Request failed (${response.status})`);
       setStatus('sent');
+      // The primary conversion — mirrored to GA4, Google Ads and Meta (no-op
+      // until those IDs are configured / consent is given).
+      trackLead({ service: data.service });
     } catch (err) {
       setStatus('error');
       setError(err.message);
@@ -221,7 +229,7 @@ function LeadForm() {
     >
       <div className="mb-8 flex items-baseline justify-between gap-4">
         <h3 className="text-[1.5rem] font-semibold tracking-[-0.03em]">Start a project</h3>
-        <span className="shrink-0 font-mono text-[0.75rem] tracking-tight text-ink-faint">
+        <span className="shrink-0 text-[0.9rem] font-semibold tracking-tight text-ink-soft tabular-nums">
           {String(step + 1).padStart(2, '0')} / {String(STEPS.length).padStart(2, '0')}
         </span>
       </div>
@@ -437,7 +445,7 @@ function LeadForm() {
           </Magnet>
         )}
 
-        <span className="text-[0.8rem] text-ink-faint">Or email admin@developwitharim.com</span>
+        <span className="text-[0.8rem] text-ink-faint">Or email {global.contactEmail}</span>
       </div>
 
       {status === 'error' && (
@@ -450,6 +458,7 @@ function LeadForm() {
 }
 
 export default function SnapStart() {
+  const { home, global } = useSiteContent();
   const motionRef = useSnapTransition();
   const [bgRef] = useInView();
   // The globe band needs its own observer — sharing bgRef would leave only the
@@ -528,7 +537,8 @@ export default function SnapStart() {
             <div className="flex flex-col justify-center">
               <h2 className="mb-8 max-w-3xl text-[clamp(2.4rem,4.8vw,4.6rem)] font-semibold leading-[1] tracking-[-0.045em]">
                 <SplitText
-                  text="Your next customer is already searching."
+                  key={home.startHeadline}
+                  text={home.startHeadline}
                   splitType="lines"
                   ease="expo.out"
                   delay={120}
@@ -539,7 +549,8 @@ export default function SnapStart() {
               </h2>
 
               <BlurText
-                text="Let's build the system that gets them to you."
+                key={home.startSubcopy}
+                text={home.startSubcopy}
                 delay={30}
                 stepDuration={0.2}
                 animateBy="words"
@@ -606,7 +617,7 @@ export default function SnapStart() {
                               </span>
                               <span className="block">
                                 <span className="mb-1.5 flex items-baseline gap-3">
-                                  <span className="font-mono text-[0.7rem] text-ink-faint">
+                                  <span className="text-[0.9rem] font-semibold text-cobalt tabular-nums">
                                     {String(i + 1).padStart(2, '0')}
                                   </span>
                                   <span className="text-[1rem] font-semibold tracking-[-0.02em] text-ink">
@@ -645,26 +656,36 @@ export default function SnapStart() {
           <div className="mx-auto w-full max-w-[1600px] px-6 py-14 sm:px-8 sm:py-16 md:px-16">
             <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
               <div className="col-span-2 md:col-span-1">
-                <span className="mb-4 block text-sm font-semibold tracking-tight">
-                  Digital Web Assurances
+                <span className="mb-4 flex items-center gap-3">
+                  <span className="inline-flex shrink-0 rounded-lg bg-[#0b0b12] p-1.5">
+                    <img
+                      src="/assets/dwa-lockup.jpg"
+                      alt="Digital Web Assurances"
+                      className="block h-7 w-auto rounded object-contain"
+                    />
+                  </span>
+                  <span className="text-sm font-semibold tracking-tight">{global.siteName}</span>
                 </span>
                 <p className="mb-6 max-w-xs text-[0.9rem] leading-relaxed text-ink-soft">
-                  We build the digital system that turns attention into customers.
+                  {global.footerBlurb}
                 </p>
                 <ul className="flex flex-col gap-2 text-[0.9rem] text-ink-soft">
                   <li>
-                    <a href="mailto:admin@developwitharim.com" className="transition-colors hover:text-ink">
-                      admin@developwitharim.com
-                    </a>
-                  </li>
-                  <li>
-                    <a href="tel:+8801518991960" className="transition-colors hover:text-ink">
-                      +880 1518 991960
+                    <a href={`mailto:${global.contactEmail}`} className="transition-colors hover:text-ink">
+                      {global.contactEmail}
                     </a>
                   </li>
                   <li>
                     <a
-                      href="https://wa.me/8801518991960"
+                      href={`tel:${global.contactPhone.replace(/[^\d+]/g, '')}`}
+                      className="transition-colors hover:text-ink"
+                    >
+                      {global.contactPhone}
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href={`https://wa.me/${global.whatsapp}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="transition-colors hover:text-ink"
@@ -703,7 +724,11 @@ export default function SnapStart() {
 
             <div className="flex flex-col gap-3 border-t border-line pt-8 text-[0.8rem] font-medium tracking-tight text-ink-soft sm:flex-row sm:items-center sm:justify-between">
               <span>© {new Date().getFullYear()} Digital Web Assurances</span>
-              <span>Build — Attract — Convert — Grow</span>
+              <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                <a href="/privacy" className="transition-colors hover:text-ink">Privacy</a>
+                <a href="/terms" className="transition-colors hover:text-ink">Terms</a>
+                <span className="text-ink-faint">{global.footerTagline}</span>
+              </span>
             </div>
           </div>
         </footer>

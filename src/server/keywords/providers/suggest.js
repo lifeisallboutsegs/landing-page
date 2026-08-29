@@ -74,6 +74,18 @@ async function duckduckgo(seed) {
 }
 
 /**
+ * Bing's OpenSearch suggestion endpoint — keyless, returns [query, [suggestions]]
+ * exactly like Google's. A third independent index: Bing surfaces phrasing the
+ * other two miss, especially commercial and Windows-ecosystem queries.
+ */
+async function bing(seed) {
+  const data = await fetchJson(
+    `https://api.bing.com/osjson.aspx?query=${encodeURIComponent(seed)}`,
+  );
+  return Array.isArray(data?.[1]) ? data[1] : [];
+}
+
+/**
  * Expands one seed into many by re-querying with each letter and modifier
  * appended — the technique every keyword tool uses under the hood. Requests run
  * in small batches so we stay polite rather than firing 40 at once.
@@ -120,12 +132,14 @@ export async function expand(seed, { language = 'en', location = '', depth = 'st
     const batch = variants.slice(i, i + BATCH);
     await Promise.all(
       batch.map(async (variant) => {
-        const [g, d] = await Promise.all([
+        const [g, d, b] = await Promise.all([
           google(variant, { language }),
           duckduckgo(variant),
+          bing(variant),
         ]);
         g.forEach((phrase, index) => record(phrase, 'google', index));
         d.forEach((phrase, index) => record(phrase, 'duckduckgo', index));
+        b.forEach((phrase, index) => record(phrase, 'bing', index));
       }),
     );
   }

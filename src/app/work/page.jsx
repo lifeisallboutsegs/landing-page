@@ -1,4 +1,14 @@
 import MarketingPage from '@/components/MarketingPage';
-import { companyPages } from '@/lib/site-pages';
-export const metadata = { title: 'Work', description: companyPages.work.description, alternates: { canonical: '/work' } };
-export default function WorkPage() { return <MarketingPage page={companyPages.work} />; }
+import { getPageContent } from '@/server/content.js';
+
+export const revalidate = 120;
+
+export async function generateMetadata() {
+  const page = await getPageContent('page:work');
+  return { title: 'Work', description: page.description, alternates: { canonical: '/work' } };
+}
+
+export default async function WorkPage() {
+  const page = await getPageContent('page:work');
+  return <MarketingPage page={page} slug="work" />;
+}

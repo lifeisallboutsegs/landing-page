@@ -1,5 +1,6 @@
 import React from 'react';
 import SectionIntro from '@/sections/SectionIntro';
+import { useSiteContent } from '@/lib/use-site-content';
 import {
   Modal,
   ModalBody,
@@ -50,6 +51,7 @@ const PROJECTS = [
 ];
 
 export default function SnapProof() {
+  const { home } = useSiteContent();
   const motionRef = useSnapTransition();
 
   return (
@@ -81,8 +83,8 @@ export default function SnapProof() {
 
       <div ref={motionRef} className="relative z-10 pb-24">
         <SectionIntro
-          headline="We've actually built this."
-          body="The method behind the work: how we make a page clearer, align demand with the destination, and give each next decision a reason."
+          headline={home.proofHeadline}
+          body={home.proofBody}
         />
 
         {/* Each case study opens rather than being dumped on the page. The

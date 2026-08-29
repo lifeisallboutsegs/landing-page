@@ -1,4 +1,5 @@
 import * as suggest from './providers/suggest.js';
+import { analyzeSerps } from './serp.js';
 
 /**
  * Keyword research, provider-agnostic.
@@ -87,7 +88,10 @@ export async function research(seed, options = {}) {
         keyword: row.keyword,
         words: row.keyword.split(/\s+/).length,
         intent,
+        intentWeight,
         difficulty,
+        difficultySource: 'estimate',
+        serpSignals: null,
         // Null until a provider that actually measures volume is configured.
         volume: row.volume ?? null,
         volumeSource: provider.providesVolume ? provider.id : null,
@@ -99,15 +103,45 @@ export async function research(seed, options = {}) {
     })
     .sort((a, b) => b.opportunity - a.opportunity);
 
+  // Ground difficulty for the most promising phrases in their live SERP rather
+  // than in phrase structure. Bounded to the top slice so the request count
+  // stays polite; 'shallow' skips it for speed.
+  const depth = options.depth ?? 'standard';
+  let serpChecked = 0;
+  if (depth !== 'shallow' && rows.length) {
+    const lookN = depth === 'deep' ? 24 : 14;
+    const targets = rows.slice(0, lookN);
+    const serp = await analyzeSerps(targets.map((r) => r.keyword), {
+      concurrency: Number(process.env.KEYWORDS_SERP_CONCURRENCY ?? 4),
+    });
+    for (const row of targets) {
+      const hit = serp.get(row.keyword);
+      if (!hit) continue;
+      row.difficulty = hit.difficulty;
+      row.difficultySource = 'serp';
+      row.serpSignals = hit.signals;
+      row.opportunity =
+        Math.round(((100 - hit.difficulty) / 100) * row.intentWeight * 100) / 10;
+      serpChecked += 1;
+    }
+    rows.sort((a, b) => b.opportunity - a.opportunity);
+  }
+
+  for (const row of rows) delete row.intentWeight;
+
+  const disclaimer = provider.providesVolume
+    ? null
+    : serpChecked > 0
+      ? `Phrases are real search suggestions from Google, Bing and DuckDuckGo. Difficulty for the top ${serpChecked} is scored from a live analysis of who currently ranks for each one (site authority, exact-match titles, forum results); the rest is estimated from phrase structure. None of this is measured search volume — connect Google Ads Keyword Planner for that.`
+      : 'These are real phrases people search, ranked by the engines’ own suggestion ordering. Difficulty and opportunity are estimates from phrase structure and intent — not measured search volume. Connect Google Ads Keyword Planner for true volume figures.';
+
   return {
     seed: seed.trim().toLowerCase(),
     provider: { id: provider.id, label: provider.label, providesVolume: provider.providesVolume },
     generatedAt: new Date().toISOString(),
     total: rows.length,
-    // Stated plainly so the report never implies measured volume it does not have.
-    disclaimer: provider.providesVolume
-      ? null
-      : 'These are real phrases people search, ranked by the engines’ own suggestion ordering. Difficulty and opportunity are estimates from phrase structure and intent — not measured search volume. Connect Google Ads Keyword Planner for true volume figures.',
+    serpChecked,
+    disclaimer,
     clusters: cluster(rows, seed),
     keywords: rows.slice(0, options.limit ?? 150),
   };

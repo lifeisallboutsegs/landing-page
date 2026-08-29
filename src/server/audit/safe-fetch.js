@@ -172,8 +172,54 @@ export async function safeFetch(rawUrl) {
   throw new UnsafeUrlError('That URL redirects too many times.');
 }
 
+/**
+ * Same SSRF validation as `safeFetch`, but for the small side files an audit
+ * pulls from the target's own origin — robots.txt, sitemap.xml — which are not
+ * HTML and are fetched one at a time rather than as a redirect chain. Never
+ * throws: a missing or unreachable file is itself a finding, not an error.
+ */
+export async function safeFetchText(rawUrl, { accept = 'text/plain,application/xml,text/xml,*/*', maxBytes = 512 * 1024 } = {}) {
+  let target = rawUrl;
+
+  for (let hop = 0; hop <= 3; hop += 1) {
+    let url;
+    try {
+      ({ url } = await assertSafeUrl(target));
+    } catch {
+      return { ok: false, status: 0, contentType: '', text: '', url: target };
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    let response;
+    try {
+      response = await fetch(url, {
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: { 'user-agent': 'DWA-SEO-Audit/1.0 (+https://digitalwebassurances.com/audit)', accept },
+      });
+    } catch {
+      clearTimeout(timer);
+      return { ok: false, status: 0, contentType: '', text: '', url: url.toString() };
+    }
+    clearTimeout(timer);
+
+    const location = response.headers.get('location');
+    if (response.status >= 300 && response.status < 400 && location) {
+      target = new URL(location, url).toString();
+      continue;
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    const text = response.ok ? await readCapped(response, maxBytes).catch(() => '') : '';
+    return { ok: response.ok, status: response.status, contentType, text, url: url.toString() };
+  }
+
+  return { ok: false, status: 0, contentType: '', text: '', url: rawUrl };
+}
+
 /** Streams the body, aborting past the cap so a huge page cannot exhaust memory. */
-async function readCapped(response) {
+async function readCapped(response, cap = MAX_BYTES) {
   if (!response.body) return '';
   const reader = response.body.getReader();
   const chunks = [];
@@ -183,7 +229,7 @@ async function readCapped(response) {
     const { done, value } = await reader.read();
     if (done) break;
     total += value.length;
-    if (total > MAX_BYTES) {
+    if (total > cap) {
       await reader.cancel();
       break;
     }

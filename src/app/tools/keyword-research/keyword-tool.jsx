@@ -10,11 +10,25 @@ const INTENT_TONE = {
   navigational: 'bg-zinc-100 text-zinc-600',
 };
 
-/** Difficulty is an estimate, so it is shown as a bar rather than a hard number. */
-function DifficultyBar({ value }) {
+/**
+ * Difficulty is shown as a bar rather than a hard number. A filled dot marks
+ * rows scored from a live SERP analysis; a hollow one marks the phrase-structure
+ * estimate. Hovering a live row shows the signals behind the score.
+ */
+function DifficultyBar({ value, source, signals }) {
   const tone = value < 30 ? 'bg-emerald-500' : value < 60 ? 'bg-amber-500' : 'bg-red-500';
+  const live = source === 'serp';
+  const title = live && signals
+    ? `Live SERP: ${signals.authorityDomains} big-brand result${signals.authorityDomains === 1 ? '' : 's'}, ` +
+      `${signals.exactMatchTitles} exact-match title${signals.exactMatchTitles === 1 ? '' : 's'}, ` +
+      `${signals.ugcResults} forum/UGC, ${signals.distinctDomains} distinct domains`
+    : 'Estimated from phrase structure — not yet SERP-checked';
   return (
-    <span className="flex items-center gap-2">
+    <span className="flex items-center gap-2" title={title}>
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${live ? 'bg-cobalt' : 'border border-ink-faint'}`}
+        aria-label={live ? 'live SERP analysis' : 'estimate'}
+      />
       <span className="h-1.5 w-16 overflow-hidden rounded-full bg-line">
         <motion.span
           className={`block h-full rounded-full ${tone}`}
@@ -229,7 +243,9 @@ export default function KeywordTool() {
                 className="cursor-help text-[0.76rem] text-amber-700 underline decoration-amber-300 underline-offset-2"
                 title={data.disclaimer}
               >
-                Estimates, not measured search volume — {data.provider.label}
+                {data.serpChecked > 0
+                  ? `Top ${data.serpChecked} difficulty from live SERP analysis · no measured volume`
+                  : `Estimates, not measured search volume — ${data.provider.label}`}
               </span>
             )}
           </div>
@@ -285,7 +301,11 @@ export default function KeywordTool() {
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <DifficultyBar value={k.difficulty} />
+                      <DifficultyBar
+                        value={k.difficulty}
+                        source={k.difficultySource}
+                        signals={k.serpSignals}
+                      />
                     </td>
                     <td className="px-4 py-2 tabular-nums font-medium">{k.opportunity}</td>
                   </tr>

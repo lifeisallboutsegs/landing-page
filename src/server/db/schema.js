@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -147,4 +148,43 @@ export const rateLimits = pgTable(
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   },
   (t) => [index('rate_limits_bucket_idx').on(t.bucket)],
+);
+
+/**
+ * Editable page content — a small headless CMS.
+ *
+ * Key/value rather than a column per field so a new editable block never needs
+ * a migration: `page:about` holds the About page's headline, intro and the two
+ * bios; `service:seo` could hold an intro override; and so on. The public pages
+ * ship hard-coded defaults (`src/lib/site-pages.js`) and only read a row when
+ * one exists, so the site renders identically with an empty table or no
+ * database at all.
+ */
+export const siteContent = pgTable('site_content', {
+  key: varchar('key', { length: 120 }).primaryKey(),
+  value: jsonb('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: varchar('updated_by', { length: 320 }),
+});
+
+/**
+ * Team members shown on /about. Structured (not stuffed into siteContent) so
+ * each person can carry a photo and be reordered without editing a JSON blob.
+ * `groupName` buckets them on the page: leadership / advisory / core.
+ */
+export const teamMembers = pgTable(
+  'team_members',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 200 }).notNull(),
+    role: varchar('role', { length: 200 }).notNull(),
+    groupName: varchar('group_name', { length: 40 }).notNull().default('core'),
+    photoUrl: varchar('photo_url', { length: 500 }),
+    bio: text('bio'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    published: boolean('published').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('team_members_group_idx').on(t.groupName, t.sortOrder)],
 );

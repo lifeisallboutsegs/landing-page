@@ -2,6 +2,7 @@ import React, { useLayoutEffect, useRef } from 'react';
 import { TracingBeam } from '@/components/ui/tracing-beam';
 import AcidSquares from '@/components/AcidSquares';
 import SectionIntro from '@/sections/SectionIntro';
+import { useSiteContent } from '@/lib/use-site-content';
 import ScrollReveal from '@/components/ScrollReveal';
 import SectionCursor from '@/components/SectionCursor';
 import { useInView } from '@/hooks/use-in-view';
@@ -26,7 +27,7 @@ const STAGES = [
   {
     title: 'Contact',
     lead: 'They take the one action that matters.',
-    body: 'The final step should cost almost nothing. Short forms, clear expectations, an obvious next move. This is the moment every other decision on the page was quietly serving.',
+    body: 'The final step should cost almost nothing. Short forms, clear expectations, an obvious next move — tracked server-side, so you know which search or ad actually earned the enquiry. This is the moment every other decision on the page was quietly serving.',
   },
 ];
 
@@ -34,6 +35,7 @@ const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const ramp = (p, a, b) => clamp01((p - a) / (b - a));
 
 export default function SnapConvert() {
+  const { home } = useSiteContent();
   const root = useRef(null);
   const curtain = useRef(null);
   const lattice = useRef(null);
@@ -187,8 +189,8 @@ export default function SnapConvert() {
             colours are inverted here rather than forking the component. */}
         <div className="pointer-events-auto [&_h2]:!text-white [&_p]:!text-white/70">
           <SectionIntro
-            headline="Traffic is useless if nobody takes action."
-            body="This is the part most agencies skip. Between arriving and enquiring there are four things a visitor has to do — and each one is a place you can lose them."
+            headline={home.convertHeadline}
+            body={home.convertBody}
           />
         </div>
 

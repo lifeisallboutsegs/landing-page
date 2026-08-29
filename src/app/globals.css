@@ -159,7 +159,6 @@
    globe cropped by its panel — from producing a horizontal scrollbar. */
 html {
   overflow-x: clip;
-  scroll-behavior: smooth;
   scroll-padding-top: 1rem;
 }
 
@@ -233,6 +232,59 @@ select {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+}
+
+/* The one gradient CTA pill in the nav (PillNav `item.cta`). A subtle idle glow
+   so the eye lands on it; the hover-circle sweep is handled in the component. */
+.pill-nav-cta {
+  box-shadow:
+    0 8px 22px rgba(27, 75, 224, 0.28),
+    0 2px 8px rgba(124, 58, 237, 0.2);
+}
+
+/* Always-reachable floating CTA. Same cobalt→violet→coral wash as the nav pill,
+   with a slow breathing halo so it stays noticeable without moving. */
+.floating-cta {
+  background-image: linear-gradient(115deg, #1b4be0 0%, #6d28d9 48%, #ff8a5b 100%);
+  background-size: 190% 100%;
+  background-position: 8% 50%;
+  color: #fff;
+  box-shadow:
+    0 12px 30px rgba(27, 75, 224, 0.34),
+    0 4px 12px rgba(255, 138, 91, 0.24);
+  transition:
+    background-position 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.25s ease,
+    box-shadow 0.3s ease,
+    opacity 0.4s ease;
+}
+
+.floating-cta:hover {
+  background-position: 100% 50%;
+  transform: translateY(-2px) scale(1.02);
+}
+
+.floating-cta::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: inherit;
+  filter: blur(16px);
+  opacity: 0.4;
+  z-index: -1;
+  animation: cta-halo 3.4s ease-in-out infinite;
+}
+
+@keyframes cta-halo {
+  0%, 100% { opacity: 0.26; transform: scale(0.97); }
+  50%      { opacity: 0.46; transform: scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-cta { transition: opacity 0.4s ease; }
+  .floating-cta:hover { transform: none; }
+  .floating-cta::after { animation: none; }
 }
 
 /* Lenis smooth scroll */

@@ -157,6 +157,9 @@ const AcidSquares = ({
   blur = 0,
   grain = true,
   grainIntensity = 0.05,
+  // Resolution ceiling. The lattice is soft at every scale, so drawing it
+  // below the device pixel ratio costs nothing anyone can see.
+  dprCap = 2,
   className = ''
 }) => {
   const containerRef = useRef(null);
@@ -179,7 +182,7 @@ const AcidSquares = ({
       alpha: true,
       premultipliedAlpha: true,
       antialias: false,
-      dpr: Math.min(window.devicePixelRatio || 1, 2)
+      dpr: Math.min(window.devicePixelRatio || 1, dprCap)
     });
 
     const gl = renderer.gl;

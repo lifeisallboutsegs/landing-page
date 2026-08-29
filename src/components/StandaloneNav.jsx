@@ -6,14 +6,14 @@ const NAV_ITEMS = [
   { label: 'Work', href: '/work' },
   { label: 'Services', href: '/services' },
   { label: 'About', href: '/about' },
-  { label: "Let's talk", href: '/contact' },
+  { label: "Let's talk", href: '/contact', cta: true },
 ];
 
 export default function StandaloneNav() {
   return (
     <div className="relative h-[52px] w-full [&>div]:!static [&>div]:!top-auto [&>div]:!w-full [&_nav]:!w-full [&_nav]:!max-w-none [&_nav]:!justify-between">
       <PillNav
-        logo="/favicon.svg"
+        logo="/assets/dwa-mark.jpg"
         logoAlt="Digital Web Assurances"
         homeHref="/"
         items={NAV_ITEMS}

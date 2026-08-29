@@ -289,20 +289,32 @@ const PillNav = ({
             style={{ gap: 'var(--pill-gap)' }}>
             {items.map((item, i) => {
               const isActive = activeHref === item.href;
+              const isCta = Boolean(item.cta);
 
-              const pillStyle = {
-                background: 'var(--pill-bg, #fff)',
-                color: 'var(--pill-text, var(--base, #000))',
-                paddingLeft: 'var(--pill-pad-x)',
-                paddingRight: 'var(--pill-pad-x)'
-              };
+              // The CTA pill is a cobalt→violet→coral gradient (the site's
+              // search-to-sale arc) instead of the flat pill colour, with a
+              // translucent-white hover sweep so the wash stays visible.
+              const pillStyle = isCta
+                ? {
+                    backgroundImage:
+                      'linear-gradient(115deg, #1b4be0 0%, #6d28d9 48%, #ff8a5b 100%)',
+                    color: '#ffffff',
+                    paddingLeft: 'var(--pill-pad-x)',
+                    paddingRight: 'var(--pill-pad-x)'
+                  }
+                : {
+                    background: 'var(--pill-bg, #fff)',
+                    color: 'var(--pill-text, var(--base, #000))',
+                    paddingLeft: 'var(--pill-pad-x)',
+                    paddingRight: 'var(--pill-pad-x)'
+                  };
 
               const PillContent = (
                 <>
                   <span
                     className="hover-circle absolute left-1/2 bottom-0 rounded-full z-[1] block pointer-events-none"
                     style={{
-                      background: 'var(--base, #000)',
+                      background: isCta ? 'rgba(255,255,255,0.22)' : 'var(--base, #000)',
                       willChange: 'transform'
                     }}
                     aria-hidden="true"
@@ -335,7 +347,9 @@ const PillNav = ({
               );
 
               const basePillClasses =
-                'relative overflow-hidden inline-flex items-center justify-center h-full no-underline rounded-full box-border font-semibold text-[16px] leading-[0] uppercase tracking-[0.2px] whitespace-nowrap cursor-pointer px-0';
+                `relative overflow-hidden inline-flex items-center justify-center h-full no-underline rounded-full box-border font-semibold text-[16px] leading-[0] uppercase tracking-[0.2px] whitespace-nowrap cursor-pointer px-0${
+                  isCta ? ' pill-nav-cta' : ''
+                }`;
 
               return (
                 <li key={item.href} role="none" className="flex h-full">

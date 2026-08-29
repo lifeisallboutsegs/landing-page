@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import SectionIntro from '@/sections/SectionIntro';
+import { useSiteContent } from '@/lib/use-site-content';
 import RippleGrid from '@/components/RippleGrid';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import AnimatedContent from '@/components/AnimatedContent';
@@ -9,6 +10,7 @@ import { useInView } from '@/hooks/use-in-view';
 import { QUALITY, dprCapFor, useQuality } from '@/hooks/use-quality';
 import { useSnapTransition } from '@/hooks/use-snap-transition';
 import { scrollToElement } from '@/lib/smooth-scroll';
+import { trackAuditComplete } from '@/lib/analytics';
 import SectionCursor from '@/components/SectionCursor';
 
 const PLACEHOLDERS = [
@@ -195,6 +197,7 @@ function Vital({ label, metric }) {
 }
 
 export default function SnapDiagnose() {
+  const { home } = useSiteContent();
   const motionRef = useSnapTransition();
   const [bgRef, bgLive, bgVisible] = useInView();
   const tier = useQuality();
@@ -249,6 +252,8 @@ export default function SnapDiagnose() {
 
       setReport(data.result);
       setStatus('done');
+      // Soft conversion — someone ran the free audit to completion.
+      trackAuditComplete({ score: data.result?.score });
     } catch {
       setStatus('error');
       setError('Could not reach the audit service. Please try again.');
@@ -323,8 +328,8 @@ export default function SnapDiagnose() {
 
       <div ref={motionRef} className="relative z-10 pb-20 sm:pb-28">
         <SectionIntro
-          headline="See what's holding your website back."
-          body="Before we talk about working together, run the free technical audit. It checks the same things we would check on day one — and you keep the report either way."
+          headline={home.diagnoseHeadline}
+          body={home.diagnoseBody}
         />
 
         <div className="mx-auto w-full max-w-[1760px] px-6 sm:px-8 md:px-16">
@@ -389,7 +394,7 @@ export default function SnapDiagnose() {
                 </span>
 
                 <div className="mb-8 rounded-2xl border border-cobalt/15 bg-cobalt/[0.045] px-5 py-5 sm:px-6">
-                  <span className="mb-2 block font-mono text-[0.72rem] uppercase tracking-[0.12em] text-cobalt">
+                  <span className="mb-2 block text-[0.9rem] font-semibold uppercase tracking-[0.1em] text-cobalt tabular-nums">
                     {String(activeCheck + 1).padStart(2, '0')} / {String(CHECKS.length).padStart(2, '0')}
                   </span>
                   <p className="text-[clamp(1.2rem,2vw,1.7rem)] font-medium leading-snug tracking-[-0.025em] text-ink">

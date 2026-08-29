@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MacbookScroll } from '@/components/ui/macbook-scroll';
 import SectionIntro from '@/sections/SectionIntro';
+import { useSiteContent } from '@/lib/use-site-content';
 import AnimatedContent from '@/components/AnimatedContent';
 import SectionCursor from '@/components/SectionCursor';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -40,7 +41,9 @@ const PRINCIPLES = [
 function Principle({ n, title, body, note }) {
   return (
     <>
-      <span className="mb-4 block font-mono text-[0.75rem] tracking-tight text-ink-faint">{n}</span>
+      <span className="mb-4 block text-[1.05rem] font-semibold tracking-tight text-cobalt tabular-nums">
+        {n}
+      </span>
       <h3 className="mb-5 text-[clamp(1.9rem,3.8vw,3.6rem)] font-semibold leading-[1.03] tracking-[-0.04em] sm:mb-6">
         {title}
       </h3>
@@ -54,6 +57,7 @@ function Principle({ n, title, body, note }) {
 }
 
 export default function SnapBuild() {
+  const { home } = useSiteContent();
   const track = useRef(null);
   const rail = useRef(null);
 
@@ -118,8 +122,8 @@ export default function SnapBuild() {
   return (
     <section id="build" data-snap="build" className="relative z-10 w-full bg-paper text-ink">
       <SectionIntro
-        headline="A website built to sell."
-        body="We design landing pages around what the visitor needs to see, understand and do next. Not web development — conversion architecture."
+        headline={home.buildHeadline}
+        body={home.buildBody}
       />
 
       {/* The laptop stays at every width — it is the one place on the page that

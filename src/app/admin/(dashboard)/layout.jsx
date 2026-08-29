@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import AdminSidebar from '@/components/admin/AdminSidebar';
 import { currentUser } from '@/server/current-user.js';
 
 // Never cache an authenticated shell.
@@ -18,7 +19,7 @@ export default async function AdminLayout({ children }) {
         <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-6 py-4">
           <div className="flex items-baseline gap-3">
             <span className="text-[0.95rem] font-semibold tracking-tight">Digital Web Assurances</span>
-            <span className="text-[0.8rem] text-ink-faint">Admin</span>
+            <span className="text-[0.8rem] text-ink-faint">Content admin</span>
           </div>
           <form action="/api/admin/logout" method="post">
             <button
@@ -30,7 +31,11 @@ export default async function AdminLayout({ children }) {
           </form>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1400px] px-6 py-10">{children}</main>
+
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-6 py-10 md:flex-row">
+        <AdminSidebar />
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }

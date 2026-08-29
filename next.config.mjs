@@ -9,6 +9,12 @@ const nextConfig = {
   // Next.js CVEs.
   poweredByHeader: false,
 
+  // The dev server is also previewed through this machine's public address.
+  // Next 16 blocks dev chunks/HMR from non-localhost origins unless each host
+  // is explicitly trusted. This affects development only; production CORS is
+  // intentionally left same-origin.
+  allowedDevOrigins: ['103.106.33.83'],
+
   async headers() {
     return [
       {

@@ -25,11 +25,17 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
 
   useEffect(() => {
     let animationFrame = null;
+    let disposed = false;
+    // The controller mounts / unmounts this cursor as the reader scrolls
+    // between sections, so a queued rAF or a trailing mousemove can fire after
+    // React has nulled the refs. Every gsap call below is guarded for that.
+    const alive = () => !disposed && lineHorizontalRef.current && lineVerticalRef.current;
+
     const handleMouseMove = ev => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       mouse = getMousePos(ev, containerRef?.current);
 
-      if (containerRef?.current) {
+      if (containerRef?.current && alive()) {
         const bounds = containerRef.current.getBoundingClientRect();
         if (
           ev.clientX < bounds.left ||
@@ -61,6 +67,7 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
     });
 
     const onMouseMove = () => {
+      if (!alive()) return;
       renderedStyles.tx.previous = renderedStyles.tx.current = mouse.x;
       renderedStyles.ty.previous = renderedStyles.ty.current = mouse.y;
 
@@ -83,14 +90,17 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
       .timeline({
         paused: true,
         onStart: () => {
+          if (!alive()) return;
           lineHorizontalRef.current.style.filter = `url(#filter-noise-x)`;
           lineVerticalRef.current.style.filter = `url(#filter-noise-y)`;
         },
         onUpdate: () => {
+          if (!filterXRef.current || !filterYRef.current) return;
           filterXRef.current.setAttribute('baseFrequency', primitiveValues.turbulence);
           filterYRef.current.setAttribute('baseFrequency', primitiveValues.turbulence);
         },
         onComplete: () => {
+          if (!alive()) return;
           lineHorizontalRef.current.style.filter = lineVerticalRef.current.style.filter = 'none';
         }
       })
@@ -105,6 +115,7 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
     const leave = () => tl.progress(1).kill();
 
     const render = () => {
+      if (!alive()) return;
       renderedStyles.tx.current = mouse.x;
       renderedStyles.ty.current = mouse.y;
 
@@ -130,6 +141,7 @@ const Crosshair = ({ color = 'white', containerRef = null }) => {
     });
 
     return () => {
+      disposed = true;
       target.removeEventListener('mousemove', handleMouseMove);
       target.removeEventListener('mousemove', onMouseMove);
       links.forEach(link => {

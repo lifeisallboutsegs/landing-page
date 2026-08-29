@@ -29,3 +29,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Runtime-uploaded media (admin CMS) — back up separately, do not wipe on deploy
+/public/uploads/

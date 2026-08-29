@@ -1,18 +1,28 @@
 import * as cheerio from 'cheerio';
 
+import { runPageSpeed } from './pagespeed.js';
+import { inspectRobots } from './robots.js';
 import { safeFetch } from './safe-fetch.js';
+import { inspectSecurity } from './security.js';
 
 /**
- * On-page audit.
+ * Website audit.
  *
- * Covers the checks the site's Diagnose section promises that PageSpeed
- * Insights does not do well: title/meta, heading order, canonical and
- * indexability, redirect chains, structured data, whether the page states an
- * offer, and how much friction its forms add. Performance and Core Web Vitals
- * come from PSI and are merged in alongside these.
+ * Five real data sources merged into one report and one score:
  *
- * Every finding carries `severity` and a `fix` written for the site owner, not
- * for us — this report is the lead magnet, so it has to be useful on its own.
+ *  - our own crawl of the page: title/meta, heading order, canonical and
+ *    indexability, redirect chains, structured data, alt text, whether the
+ *    page states an offer, and form friction;
+ *  - Google PageSpeed Insights: Lighthouse performance / SEO / accessibility /
+ *    best-practices scores, lab Core Web Vitals, and CrUX field data;
+ *  - the response headers: HTTPS, HSTS, CSP, compression, stack disclosure;
+ *  - Mozilla HTTP Observatory: an independent security grade;
+ *  - the origin's robots.txt and XML sitemap.
+ *
+ * Everything except our own crawl is best-effort — if a source is down or slow
+ * the audit still returns, just without that section. Every finding carries
+ * `severity` and a `fix` written for the site owner: this report is the lead
+ * magnet, so it has to be useful on its own.
  */
 
 const SEVERITY_WEIGHT = { critical: 25, high: 12, medium: 6, low: 2 };
@@ -27,10 +37,30 @@ const OFFER_SIGNALS = [
   'demo', 'consultation', 'enquire', 'inquiry', 'quote', 'audit', 'buy', 'order',
 ];
 
+/** Formats a millisecond figure the way a person reads it. */
+function ms(value) {
+  if (value == null) return null;
+  return value >= 1000 ? `${(value / 1000).toFixed(1)} s` : `${Math.round(value)} ms`;
+}
+
 export async function crawl(rawUrl) {
+  // PageSpeed doesn't need our fetched HTML, so start it first and let it run
+  // while we crawl the page ourselves — the audit then costs about as long as
+  // PageSpeed alone rather than the sum of every source.
+  const psiPromise = runPageSpeed(rawUrl);
+  psiPromise.catch(() => {}); // handled at await; this just silences the race
+
   const page = await safeFetch(rawUrl);
   const $ = cheerio.load(page.html);
   const findings = [];
+
+  // Security headers + Observatory and the robots/sitemap check both key off the
+  // resolved URL, so they start now and are awaited alongside PageSpeed.
+  const [psi, security, robots] = await Promise.all([
+    psiPromise,
+    inspectSecurity(page.finalUrl, page.headers),
+    inspectRobots(new URL(page.finalUrl).origin),
+  ]);
 
   // ---- Title -------------------------------------------------------------
   const title = $('head title').first().text().trim();
@@ -235,15 +265,102 @@ export async function crawl(rawUrl) {
     );
   }
 
+  // ---- PageSpeed / Core Web Vitals ------------------------------------------
+  // Merge Lighthouse's biggest opportunities into the findings so the report is
+  // one list, and raise a Core Web Vitals flag from whichever data is realer —
+  // field (what users actually experienced) over lab.
+  let performance = { included: false, reason: psi.reason ?? 'PageSpeed not run' };
+  if (psi.available) {
+    performance = {
+      included: true,
+      strategy: psi.strategy,
+      scores: psi.scores,
+      metrics: psi.metrics,
+      field: psi.field,
+      fieldScope: psi.fieldScope,
+    };
+
+    for (const opp of psi.opportunities) {
+      findings.push(
+        finding(`psi-${opp.id}`, opp.severity, opp.title, opp.detail,
+          `Lighthouse estimates about ${ms(opp.savingsMs)} saved. Address this in your build or CDN config.`),
+      );
+    }
+
+    const fieldLcp = psi.field?.metrics?.lcp;
+    const labLcp = psi.metrics?.lcp;
+    const labCls = psi.metrics?.cls;
+    const labTbt = psi.metrics?.tbt;
+
+    if (fieldLcp?.category === 'SLOW' || (fieldLcp == null && labLcp?.rating === 'poor')) {
+      findings.push(
+        finding('cwv-lcp', 'high', 'Largest Contentful Paint is slow',
+          `The main content takes ${fieldLcp?.p75 ? ms(fieldLcp.p75) : labLcp?.display} to appear${fieldLcp ? ' for real visitors (75th percentile)' : ' in a lab test'}. Google wants this under 2.5 s.`,
+          'Compress and preload the hero image, cut render-blocking CSS/JS, and serve from a CDN.'),
+      );
+    }
+    if (labCls && labCls.value / 1000 >= 0.1 && labCls.rating !== 'good') {
+      findings.push(
+        finding('cwv-cls', labCls.rating === 'poor' ? 'high' : 'medium', 'The layout shifts as it loads',
+          `Cumulative Layout Shift is ${labCls.display}. Content jumping under the reader's cursor is measured and penalised.`,
+          'Set explicit width and height on images and embeds, and reserve space for anything injected late.'),
+      );
+    }
+    if (labTbt && labTbt.rating === 'poor') {
+      findings.push(
+        finding('cwv-tbt', 'medium', 'The page is slow to respond to input',
+          `Total Blocking Time is ${labTbt.display} — long JavaScript tasks freeze taps and clicks during load.`,
+          'Split large bundles, defer third-party scripts, and remove unused JavaScript.'),
+      );
+    }
+  }
+
+  // ---- Security & crawlability -------------------------------------------
+  if (security.included) findings.push(...security.findings);
+  findings.push(...robots.findings);
+
   // ---- Score -------------------------------------------------------------
-  const penalty = findings.reduce((sum, f) => sum + (SEVERITY_WEIGHT[f.severity] ?? 0), 0);
-  const score = Math.max(0, Math.min(100, 100 - penalty));
+  // On-page penalties cover structure, security and commercial checks that
+  // Lighthouse ignores, so they keep real weight; the Lighthouse category
+  // scores fold in when PSI ran. Without PSI the score is that model alone.
+  const onPagePenalty = findings
+    .filter((f) => !f.id.startsWith('psi-') && !f.id.startsWith('cwv-'))
+    .reduce((sum, f) => sum + (SEVERITY_WEIGHT[f.severity] ?? 0), 0);
+  const onPageScore = Math.max(0, Math.min(100, 100 - onPagePenalty));
+
+  let score = onPageScore;
+  if (psi.available) {
+    const parts = [
+      { v: onPageScore, w: 0.4 },
+      { v: psi.scores.seo, w: 0.25 },
+      { v: psi.scores.performance, w: 0.25 },
+      { v: psi.scores.bestPractices, w: 0.1 },
+    ].filter((p) => typeof p.v === 'number');
+    const weight = parts.reduce((s, p) => s + p.w, 0);
+    score = Math.round(parts.reduce((s, p) => s + p.v * p.w, 0) / weight);
+  }
 
   return {
     url: page.finalUrl,
     requestedUrl: rawUrl,
     fetchedAt: new Date().toISOString(),
     score,
+    onPageScore,
+    performance,
+    security: security.included
+      ? {
+          https: security.https,
+          headers: security.headers,
+          stackDisclosure: security.stackDisclosure,
+          observatory: security.observatory,
+        }
+      : { included: false },
+    crawlability: {
+      robotsFound: robots.robotsFound,
+      robotsBlocksAll: robots.robotsBlocksAll,
+      sitemapUrl: robots.sitemapUrl,
+      sitemapUrlCount: robots.sitemapUrlCount,
+    },
     summary: {
       title: title || null,
       titleLength: title.length,

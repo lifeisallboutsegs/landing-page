@@ -4,6 +4,7 @@ import { CometCard } from '@/components/ui/comet-card';
 import { TextGenerateEffect } from '@/components/ui/text-generate-effect';
 import GlassSurface from '@/components/GlassSurface';
 import SectionIntro from '@/sections/SectionIntro';
+import { useSiteContent } from '@/lib/use-site-content';
 import ScrollReveal from '@/components/ScrollReveal';
 import AnimatedContent from '@/components/AnimatedContent';
 import SectionCursor from '@/components/SectionCursor';
@@ -22,10 +23,10 @@ const CHANNELS = [
   },
   {
     icon: Megaphone,
-    kicker: 'Google Ads',
+    kicker: 'Google & Meta Ads',
     title: 'The people you reach today',
-    body: 'Search takes months to compound. Paid buys you the same intent immediately, so you learn what converts while the organic work matures. Tight match types, honest negatives, and budget pointed at terms that actually close.',
-    points: ['Intent-matched keywords', 'Disciplined negatives', 'Spend tied to booked work'],
+    body: 'Search takes months to compound. Google buys you that same intent immediately, and Meta puts you in front of people who have not started searching yet. Tight targeting, honest negatives, and budget pointed at what actually closes.',
+    points: ['Google Search & Shopping', 'Meta feed, Reels & retargeting', 'Spend tied to booked work'],
   },
 ];
 
@@ -53,9 +54,11 @@ function Channel({ icon: Icon, label, tone, glass }) {
       {...glass}
       className="shadow-[0_10px_40px_rgba(11,11,18,0.08)]"
     >
-      <span className="flex items-center gap-3 px-4">
+      <span className="flex h-full w-full items-center justify-center gap-2.5 px-4 text-center">
         <Icon className={`h-4 w-4 shrink-0 ${tone}`} strokeWidth={1.7} />
-        <span className="text-[0.9rem] font-semibold tracking-tight text-ink">{label}</span>
+        <span className="whitespace-nowrap text-[0.82rem] font-semibold tracking-tight text-ink sm:text-[0.88rem]">
+          {label}
+        </span>
       </span>
     </GlassSurface>
   );
@@ -134,6 +137,7 @@ function ChannelCard({ icon: Icon, kicker, title, body, points, delay, tilt }) {
 }
 
 export default function SnapAttract() {
+  const { home } = useSiteContent();
   const root = useRef(null);
   const sky = useRef(null);
   const stage = useRef(null);
@@ -302,8 +306,8 @@ export default function SnapAttract() {
           className="attract-intent-art pointer-events-none absolute right-[4%] top-[23rem] z-0 hidden w-[min(31vw,31rem)] select-none object-contain opacity-65 lg:block"
         />
         <SectionIntro
-          headline="Then we bring the right people to it."
-          body="A page that converts is worth nothing without demand pointed at it. We build two streams into the same destination — the search results you earn, and the placements you buy."
+          headline={home.attractHeadline}
+          body={home.attractBody}
         />
 
         {wide ? (
@@ -318,7 +322,7 @@ export default function SnapAttract() {
                 />
 
                 <div className="relative flex items-center justify-between gap-8">
-                  <div ref={organic} className="w-[232px] shrink-0 will-change-transform">
+                  <div ref={organic} className="w-[248px] shrink-0 will-change-transform">
                     <Channel icon={Search} label="Organic search" tone="text-cobalt" glass={glass} />
                   </div>
 
@@ -327,8 +331,8 @@ export default function SnapAttract() {
                     {headline}
                   </div>
 
-                  <div ref={paid} className="w-[232px] shrink-0 will-change-transform">
-                    <Channel icon={Megaphone} label="Google Ads" tone="text-coral" glass={glass} />
+                  <div ref={paid} className="w-[248px] shrink-0 will-change-transform">
+                    <Channel icon={Megaphone} label="Google & Meta Ads" tone="text-coral" glass={glass} />
                   </div>
                 </div>
               </div>
@@ -352,7 +356,7 @@ export default function SnapAttract() {
             <span className="mx-auto my-6 block h-14 w-px bg-gradient-to-t from-coral/40 to-coral/10" />
 
             <AnimatedContent distance={26} direction="vertical" delay={0.15} duration={0.8} ease="power3.out">
-              <Channel icon={Megaphone} label="Google Ads" tone="text-coral" glass={glass} />
+              <Channel icon={Megaphone} label="Google & Meta Ads" tone="text-coral" glass={glass} />
             </AnimatedContent>
           </div>
         )}

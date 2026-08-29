@@ -48,6 +48,11 @@ const GlassSurface = ({
   const blueGradId = `blue-grad-${uniqueId}`;
 
   const [svgSupported, setSvgSupported] = useState(false);
+  // Feature detection (backdrop-filter, SVG filters, colour scheme) can only run
+  // in the browser. Rendering the detected styles on the first client paint
+  // makes them disagree with the server HTML — a hydration mismatch. Hold the
+  // server's fallback styles until after mount, then swap once.
+  const [mounted, setMounted] = useState(false);
 
   const containerRef = useRef(null);
   const feImageRef = useRef(null);
@@ -144,6 +149,7 @@ const GlassSurface = ({
   }, [width, height]);
 
   useEffect(() => {
+    setMounted(true);
     setSvgSupported(supportsSVGFilters());
   }, []);
 
@@ -180,9 +186,9 @@ const GlassSurface = ({
       '--glass-saturation': saturation
     };
 
-    const backdropFilterSupported = supportsBackdropFilter();
+    const backdropFilterSupported = mounted && supportsBackdropFilter();
 
-    if (svgSupported) {
+    if (mounted && svgSupported) {
       return {
         ...baseStyles,
         background: isDarkMode ? `hsl(0 0% 0% / ${backgroundOpacity})` : `hsl(0 0% 100% / ${backgroundOpacity})`,

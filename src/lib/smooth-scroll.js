@@ -33,5 +33,6 @@ export function scrollToElement(target, { offset = -96, immediate = false } = {}
     return;
   }
 
-  target.scrollIntoView({ behavior: immediate ? 'auto' : 'smooth', block: 'start' });
+  const top = window.scrollY + target.getBoundingClientRect().top + offset;
+  window.scrollTo({ top, behavior: immediate ? 'auto' : 'smooth' });
 }

@@ -13,13 +13,21 @@ const RippleGrid = ({
   opacity = 1.0,
   gridRotation = 0,
   mouseInteraction = true,
-  mouseInteractionRadius = 1
+  mouseInteractionRadius = 1,
+  // A full-screen fragment shader costs exactly what it covers in pixels, so
+  // the caller decides how many of them to pay for.
+  dprCap = 2,
+  // Held still — and drawing nothing — while the section is off screen.
+  paused = false
 }) => {
   const containerRef = useRef(null);
   const mousePositionRef = useRef({ x: 0.5, y: 0.5 });
   const targetMouseRef = useRef({ x: 0.5, y: 0.5 });
   const mouseInfluenceRef = useRef(0);
   const uniformsRef = useRef(null);
+  // Read inside the render loop, so a pause never has to tear down the context.
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -32,7 +40,7 @@ const RippleGrid = ({
     };
 
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio, 2),
+      dpr: Math.min(window.devicePixelRatio, dprCap),
       alpha: true
     });
     const gl = renderer.gl;
@@ -201,8 +209,24 @@ void main() {
     resize();
 
     let animationFrameId;
+    // Time is tracked as elapsed-while-running rather than raw clock, so a grid
+    // that comes back into view resumes where it left off instead of jumping
+    // forward by however long it was off screen.
+    let elapsed = 0;
+    let previous = 0;
+
     const render = t => {
-      uniforms.iTime.value = t * 0.001;
+      const idle = pausedRef.current || document.hidden;
+      const delta = previous ? t - previous : 0;
+      previous = t;
+
+      if (idle) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+
+      elapsed += delta;
+      uniforms.iTime.value = elapsed * 0.001;
 
       const lerpFactor = 0.1;
       mousePositionRef.current.x += (targetMouseRef.current.x - mousePositionRef.current.x) * lerpFactor;
