@@ -4,8 +4,9 @@ import Script from 'next/script';
 import Analytics from '@/components/Analytics';
 import ConsentBanner from '@/components/ConsentBanner';
 import FloatingCta from '@/components/FloatingCta';
+import { DEFAULT_META_DESCRIPTION, getSiteUrl } from '@/lib/seo';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://digitalwebassurances.com';
+const SITE_URL = getSiteUrl();
 
 const ANALYTICS_ON = Boolean(
   process.env.NEXT_PUBLIC_GA_ID ||
@@ -27,8 +28,7 @@ export const metadata = {
     // Route segments set their own title; this keeps the brand on the end.
     template: '%s | Digital Web Assurances',
   },
-  description:
-    'One team for the whole path from a customer searching to the sale: keyword research, a MERN-built website, SEO, Google and Meta Ads, and server-side tracking. Free technical SEO audit.',
+  description: DEFAULT_META_DESCRIPTION,
   applicationName: 'Digital Web Assurances',
   keywords: [
     'MERN website development',

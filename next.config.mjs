@@ -1,3 +1,21 @@
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com`,
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  `connect-src 'self'${isDevelopment ? ' ws: wss:' : ''} https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googleadservices.com https://*.doubleclick.net https://www.facebook.com https://connect.facebook.net https://cloudflareinsights.com`,
+  "frame-src 'self' https://www.googletagmanager.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  ...(!isDevelopment ? ['upgrade-insecure-requests'] : []),
+].join('; ');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // The VPS deploy runs `next start` against a self-contained build rather than
@@ -20,6 +38,7 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: [
+          { key: 'Content-Security-Policy', value: contentSecurityPolicy },
           // Stops the browser guessing content types, which is how a benign
           // upload becomes an executable script.
           { key: 'X-Content-Type-Options', value: 'nosniff' },

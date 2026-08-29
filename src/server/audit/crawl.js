@@ -212,7 +212,9 @@ export async function crawl(rawUrl) {
 
   // ---- Images ------------------------------------------------------------
   const images = $('img');
-  const missingAlt = images.filter((_, el) => !$(el).attr('alt')?.trim()).length;
+  // alt="" is the correct accessible treatment for a decorative image. Only
+  // an absent attribute is a failure.
+  const missingAlt = images.filter((_, el) => $(el).attr('alt') === undefined).length;
   if (missingAlt > 0) {
     findings.push(
       finding('img-alt', missingAlt > 5 ? 'medium' : 'low',
@@ -224,7 +226,16 @@ export async function crawl(rawUrl) {
 
   // ---- Weight ------------------------------------------------------------
   const scripts = $('script[src]').length;
-  const blocking = $('head script[src]:not([async]):not([defer])').length;
+  const blocking = $('head script[src]').filter((_, el) => {
+    const script = $(el);
+    const type = script.attr('type')?.toLowerCase();
+    return (
+      script.attr('async') === undefined &&
+      script.attr('defer') === undefined &&
+      script.attr('nomodule') === undefined &&
+      type !== 'module'
+    );
+  }).length;
   if (blocking > 0) {
     findings.push(
       finding('render-blocking', blocking > 3 ? 'high' : 'medium',

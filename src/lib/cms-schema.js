@@ -56,7 +56,7 @@ export const CMS_GROUPS = [
         name: 'metaDescription',
         label: 'Default meta description',
         type: 'textarea',
-        help: 'Used for search results and link previews on pages that don’t set their own.',
+        help: 'Used for search results and link previews. Keep it clear and under 165 characters.',
       },
       { name: 'contactEmail', label: 'Contact email', type: 'text' },
       { name: 'contactPhone', label: 'Contact phone', type: 'text' },

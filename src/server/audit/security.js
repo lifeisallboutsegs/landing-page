@@ -32,7 +32,15 @@ function inspectHeaders(finalUrl, headers) {
   const refPol = has(headers, 'referrer-policy');
   const permPol = has(headers, 'permissions-policy');
   const encoding = has(headers, 'content-encoding');
-  const serverStack = [has(headers, 'server'), has(headers, 'x-powered-by')].filter(Boolean);
+  const server = has(headers, 'server');
+  const poweredBy = has(headers, 'x-powered-by');
+  // A proxy brand such as "cloudflare" is unavoidable and does not disclose a
+  // vulnerable version. Versioned Server values and X-Powered-By are useful to
+  // an attacker and remain findings.
+  const serverStack = [
+    server && /\d/.test(server) ? server : null,
+    poweredBy,
+  ].filter(Boolean);
 
   if (!isHttps) {
     findings.push({

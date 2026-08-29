@@ -1,4 +1,4 @@
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://digitalwebassurances.com';
+import { getSiteUrl } from '@/lib/seo';
 
 /**
  * Generated rather than a static file so the sitemap URL always matches the
@@ -6,9 +6,11 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://digitalwebassurances.c
  * login page in search results is only ever a liability.
  */
 export default function robots() {
+  const site = getSiteUrl();
+
   return {
     rules: [{ userAgent: '*', allow: '/', disallow: ['/admin', '/admin/', '/api/'] }],
-    sitemap: `${SITE}/sitemap.xml`,
-    host: SITE,
+    sitemap: `${site}/sitemap.xml`,
+    host: site,
   };
 }

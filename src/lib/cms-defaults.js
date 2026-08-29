@@ -5,6 +5,7 @@
  */
 
 import { aboutDefaults } from './about-content.js';
+import { DEFAULT_META_DESCRIPTION } from './seo.js';
 import { companyPages, services } from './site-pages.js';
 
 export const HOME_DEFAULTS = {
@@ -46,8 +47,7 @@ export const HOME_DEFAULTS = {
 export const GLOBAL_DEFAULTS = {
   siteName: 'Digital Web Assurances',
   metaTitle: 'Digital Web Assurances — from a search to a sale, as one system',
-  metaDescription:
-    'One team for the whole path from a customer searching to the sale: keyword research, a MERN-built website, SEO, Google and Meta Ads, and server-side tracking. Free technical SEO audit.',
+  metaDescription: DEFAULT_META_DESCRIPTION,
   contactEmail: 'admin@developwitharim.com',
   contactPhone: '+880 1518 991960',
   whatsapp: '8801518991960',
