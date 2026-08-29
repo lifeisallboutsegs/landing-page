@@ -115,8 +115,8 @@ sudo -u dwa npm run build:standalone   # build + copies public/ and .next/static
 files relative to its own directory (`.next/standalone`), not the project root,
 so a `.env.local` at the top level is silently ignored and every database call
 fails with *"DATABASE_URL is not set"*. The systemd `EnvironmentFile` in step 7
-is what makes this work in production. To run the same build locally, use
-`npm run start:prod`, which loads the project's env files and hands them to the
+is what makes this work in production. To run the same build manually, use
+`PORT=3002 npm start`, which loads the project's env files and hands them to the
 server process.
 
 ## 6. Create the admin user

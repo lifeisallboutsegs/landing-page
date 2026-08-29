@@ -21,7 +21,7 @@ nextEnv.loadEnvConfig(root);
 
 const server = path.join(root, '.next', 'standalone', 'server.js');
 if (!existsSync(server)) {
-  console.error('No standalone build found. Run `npm run build` first.');
+  console.error('No standalone build found. Run `npm run build:standalone` first.');
   process.exit(1);
 }
 
